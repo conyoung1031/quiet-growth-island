@@ -9,7 +9,7 @@
 直接用浏览器打开 `index.html`：
 
 ```bash
-open quiet-growth-island/index.html
+open index.html
 ```
 
 - **桌面**：左侧是屏幕导航栏（01–11），点击即可跳转；设备内所有按钮可点，能走完「安顿 → 动一动 → 小步 → 休息 → 收尾」完整闭环。
