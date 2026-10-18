@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>安静成长岛 · 移动端 UI 原型</title>
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21V10" stroke="%23456B5E" stroke-width="2" stroke-linecap="round"/><path d="M12 13C8.6 13 6.5 10.9 6.5 7.5c3.4 0 5.5 2.1 5.5 5.5z" fill="%237FA988"/><path d="M12 11c0-2.7 1.9-4.5 5-4.5 0 2.7-1.9 4.5-5 4.5z" fill="%23A9C4A4"/></svg>'>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-screen="welcome">
+
+<!-- ========== SVG 图标库 ========== -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V10"/><path d="M12 13C8.6 13 6.5 10.9 6.5 7.5c3.4 0 5.5 2.1 5.5 5.5z"/><path d="M12 11c0-2.7 1.9-4.5 5-4.5 0 2.7-1.9 4.5-5 4.5z"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17.5h9.2a3.8 3.8 0 0 0 .9-7.5A5.3 5.3 0 0 0 6.8 10.4 3.6 3.6 0 0 0 7 17.5z"/></symbol>
+    <symbol id="i-feet" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.7 9.8c1.1 0 1.9.8 1.9 2 0 1.5-.7 3.4-1.9 3.4s-1.9-1.9-1.9-3.4c0-1.2.8-2 1.9-2z"/><path d="M15.3 6.8c1.1 0 1.9.8 1.9 2 0 1.5-.7 3.4-1.9 3.4s-1.9-1.9-1.9-3.4c0-1.2.8-2 1.9-2z"/><path d="M8.7 18.4v1.6M15.3 15.4v1.6"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5c3 3.1 4.9 5.6 4.9 8.4a4.9 4.9 0 1 1-9.8 0c0-1.5.5-2.9 1.5-4.3.3 1.1 1 2 1.9 2.4-.4-2.2.4-4.4 1.5-6.5z"/></symbol>
+    <symbol id="i-battery" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8.5" width="15.5" height="8" rx="2.6"/><path d="M21 11v3c.9-.2 1.4-.8 1.4-1.5S21.9 11.2 21 11z"/><path d="M6.8 11.5v2"/></symbol>
+    <symbol id="i-golight" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.2"/></symbol>
+    <symbol id="i-shell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12.5A7 7 0 1 0 12 19.5a5.2 5.2 0 0 0 5.2-5.2 3.4 3.4 0 0 0-3.4-3.4 1.8 1.8 0 1 0 1.8 1.8"/></symbol>
+    <symbol id="i-lighthouse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.2 7.6h3.6l1 13.4H9.2l1-13.4z"/><path d="M9.6 7.6L12 4.6l2.4 3"/><path d="M6.2 5.8l1.8 1M17.8 5.8l-1.8 1"/><path d="M7.6 21h8.8"/><path d="M10.7 11h2.6"/></symbol>
+    <symbol id="i-fish" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12c2.8-3.4 6.2-3.4 8.6 0-2.4 3.4-5.8 3.4-8.6 0z"/><path d="M13.1 12l3.6-2.9v5.8L13.1 12z"/><circle cx="7.1" cy="11.4" r=".2" fill="currentColor" stroke="currentColor" stroke-width="1"/></symbol>
+    <symbol id="i-rings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8.4"/><circle cx="12" cy="12" r="5.6"/><circle cx="12" cy="12" r="2.9"/><circle cx="12" cy="12" r=".7" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5h15v7.4a1.8 1.8 0 0 1-1.8 1.8H6.3a1.8 1.8 0 0 1-1.8-1.8v-7.4z"/><rect x="3.4" y="7.2" width="17.2" height="3.3" rx="1.4"/><path d="M10.2 14h3.6"/></symbol>
+    <symbol id="i-searchcheck" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.6" cy="10.6" r="6.1"/><path d="M15.2 15.2L20 20"/><path d="M8 10.7l1.8 1.8 3.3-3.5"/></symbol>
+    <symbol id="i-waves" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3.5 9.2c2.83-2 5.67-2 8.5 0s5.67 2 8.5 0"/><path d="M3.5 14.8c2.83-2 5.67-2 8.5 0s5.67 2 8.5 0"/></symbol>
+    <symbol id="i-drop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 4.2c3.1 3.7 4.9 6.4 4.9 8.8a4.9 4.9 0 1 1-9.8 0c0-2.4 1.8-5.1 4.9-8.8z"/></symbol>
+    <symbol id="i-stretch" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20V7"/><path d="M8.2 10.2L12 6.4l3.8 3.8"/><path d="M8 20h8"/></symbol>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.2" cy="12" r="3.4"/><path d="M11.6 12H20"/><path d="M17.2 12v2.8"/><path d="M20 12v2"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 19.3S5.6 15.4 3.7 11.5A4.7 4.7 0 0 1 12 7.4a4.7 4.7 0 0 1 8.3 4.1c-1.9 3.9-8.3 7.8-8.3 7.8z"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.6l4.3 4.1L19 7.3"/></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V6.2A2.2 2.2 0 0 1 6.2 4H8"/><path d="M16 4h1.8A2.2 2.2 0 0 1 20 6.2V8"/><path d="M20 16v1.8a2.2 2.2 0 0 1-2.2 2.2H16"/><path d="M8 20H6.2A2.2 2.2 0 0 1 4 17.8V16"/><path d="M8.6 12h6.8"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 5.8A2.3 2.3 0 0 1 7.8 3.5H19v15.2H7.8a2.3 2.3 0 0 0-2.3 2.3V5.8z"/><path d="M5.5 18.7a2.3 2.3 0 0 1 2.3-2.3H19"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3.5a8.5 8.5 0 1 0 .3 17c1.6 0 2.2-1 1.7-2.1-.7-1.5.2-2.9 1.9-2.9h1.6a3.4 3.4 0 0 0 3-3.4C20.5 7 16.8 3.5 12 3.5z"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="12" cy="7.4" r="1" fill="currentColor" stroke="none"/><circle cx="15.8" cy="9.2" r="1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-shapes" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4.8 17.5l3.4-6.4 3.4 6.4H4.8z"/><circle cx="16.4" cy="14.6" r="3.6"/></symbol>
+    <symbol id="i-island" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18.5h16"/><path d="M7 18.5c0-3.3 2.2-5.4 5-5.4s5 2.1 5 5.4"/><circle cx="12" cy="6.8" r="2.2"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12.5h3.6l1.8-4.2 3 8.4 2-4.2h6.6"/></symbol>
+    <symbol id="i-tree" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-6.8"/><path d="M12 14.2C12 11 9.6 8.8 5.9 8.8c0 3.2 2.4 5.4 6.1 5.4z"/><path d="M12 12.6c0-2.5 1.9-4.2 4.9-4.2 0 2.5-1.9 4.2-4.9 4.2z"/></symbol>
+    <symbol id="i-door" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 20.5V4.8A1.8 1.8 0 0 1 8.3 3h7.4a1.8 1.8 0 0 1 1.8 1.8v15.7"/><path d="M4.5 20.5h15"/><circle cx="14.9" cy="12.2" r=".8" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-chevleft" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 5.5L8 12l6.5 6.5"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3.6"/><path d="M12 3.2v2M12 18.8v2M3.2 12h2M18.8 12h2M5.8 5.8l1.4 1.4M16.8 16.8l1.4 1.4M18.2 5.8l-1.4 1.4M7.2 16.8l-1.4 1.4"/></symbol>
+    <symbol id="i-sound" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 5L7 8.5H4.5v7H7L11.5 19V5z"/><path d="M15 9.6a3.4 3.4 0 0 1 0 4.8"/><path d="M17.3 7.3a6.6 6.6 0 0 1 0 9.4"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 13.5h8.2a3.4 3.4 0 0 0 .8-6.7A4.8 4.8 0 0 0 7.2 7.3a3.3 3.3 0 0 0 .3 6.2z"/><path d="M8.5 16.5l-.9 2.2M12.3 16.5l-.9 2.2M16.1 16.5l-.9 2.2"/></symbol>
+  </defs>
+</svg>
+
+<div class="stage">
+
+  <!-- ========== 原型导航（桌面端） ========== -->
+  <aside class="rail" aria-label="原型屏幕导航">
+    <div class="rail-brand"><svg class="ic"><use href="#i-leaf"/></svg><b>安静成长岛</b></div>
+    <div class="rail-sub">QUIET GROWTH ISLAND · UI 原型</div>
+    <nav class="rail-list" id="railList"></nav>
+    <div class="rail-note">点击画面中的按钮即可体验完整流程；休息、计时等等待已加速演示。</div>
+  </aside>
+
+  <!-- ========== 设备 ========== -->
+  <div class="device">
+    <div class="device-screen">
+
+      <div class="statusbar">
+        <span>9:41</span>
+        <div class="sb-icons">
+          <svg width="18" height="12" viewBox="0 0 18 12"><g fill="#2E4038"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="5" y="4.5" width="3" height="6.5" rx="1"/><rect x="10" y="2" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1" opacity=".3"/></g></svg>
+          <svg width="17" height="12" viewBox="0 0 17 12"><path d="M2.5 4.6a9 9 0 0 1 12 0" stroke="#2E4038" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M5 7.4a5.4 5.4 0 0 1 7 0" stroke="#2E4038" stroke-width="1.8" fill="none" stroke-linecap="round"/><circle cx="8.5" cy="10.2" r="1.5" fill="#2E4038"/></svg>
+          <svg width="26" height="12" viewBox="0 0 26 12"><rect x="0.8" y="0.8" width="21" height="10.4" rx="3.2" stroke="#2E4038" opacity=".4" fill="none" stroke-width="1.2"/><rect x="2.6" y="2.6" width="14" height="6.8" rx="1.8" fill="#2E4038"/><path d="M23.6 4v4c1.2-.3 1.9-1 1.9-2s-.7-1.7-1.9-2z" fill="#2E4038" opacity=".4"/></svg>
+        </div>
+      </div>
+
+      <main class="viewport" id="viewport">
+
+        <!-- ============ 01 启动 / 欢迎页 ============ -->
+        <section class="screen" id="scr-welcome" data-name="启动 · 欢迎页">
+          <div class="content no-tab">
+            <div class="brand-row">
+              <span class="brand-chip"><svg class="ic"><use href="#i-leaf"/></svg>安静成长岛</span>
+              <span class="tag-plain">儿童小门</span>
+            </div>
+            <div class="hero">
+              <svg class="hero-art" viewBox="0 0 320 250" fill="none" aria-label="小岛插画：太阳、小岛与灯塔">
+                <defs>
+                  <linearGradient id="gBlob" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0" stop-color="#DFEADD"/><stop offset="1" stop-color="#EAE3CB"/>
+                  </linearGradient>
+                  <clipPath id="heroCardClip"><rect x="86" y="56" width="148" height="136" rx="36"/></clipPath>
+                </defs>
+                <circle cx="160" cy="124" r="112" fill="url(#gBlob)"/>
+                <circle cx="160" cy="124" r="112" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
+                <rect x="86" y="56" width="148" height="136" rx="36" fill="#FDFBF4"/>
+                <g clip-path="url(#heroCardClip)">
+                  <circle cx="160" cy="58" r="27" fill="#EFC878"/>
+                  <rect x="98" y="134" width="78" height="58" rx="28" fill="#8FAE8B"/>
+                  <rect x="184" y="112" width="32" height="80" rx="15" fill="#D9996B"/>
+                  <circle cx="200" cy="121" r="7.5" fill="#F4E0B4"/>
+                  <rect x="106" y="172" width="36" height="7" rx="3.5" fill="#BFD8DB"/>
+                  <rect x="150" y="180" width="24" height="7" rx="3.5" fill="#D6E5E3"/>
+                </g>
+                <circle cx="58" cy="66" r="3" fill="#C9BFA4"/>
+                <circle cx="264" cy="184" r="3.5" fill="#B9C6B3"/>
+                <circle cx="252" cy="54" r="2.5" fill="#D8CBA9"/>
+              </svg>
+              <h1 class="welcome-h1">今天，我们慢慢来。</h1>
+              <p class="welcome-sub">小岛每天只推荐一件小事：安静一下、动一动，或迈出第一小步。其余时间，它不会打扰你。</p>
+              <div class="welcome-greet" id="welcomeGreet" hidden></div>
+              <div class="card name-card" id="nameCard" hidden>
+                <div class="eyebrow" style="margin-bottom:6px">小岛想知道你的名字</div>
+                <input class="name-input" id="nameInput" maxlength="8" placeholder="写下你的名字" aria-label="你的名字">
+                <button class="btn btn-green" id="nameBtn" style="margin-top:12px">这是我的小岛</button>
+                <button class="link-btn" id="nameSkip">先不告诉它，直接进去</button>
+              </div>
+              <div class="pill-row">
+                <span class="pill"><svg class="ic"><use href="#i-leaf"/></svg>不比较</span>
+                <span class="pill"><svg class="ic"><use href="#i-waves"/></svg>不催促</span>
+                <span class="pill"><svg class="ic"><use href="#i-heart"/></svg>不打分</span>
+              </div>
+            </div>
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" data-goto="home">去看看今天的小建议</button>
+            <p class="tiny-note">安静成长岛 · 给容易分心的孩子一个慢慢长大的小地方</p>
+            <button class="link-btn" data-goto="parent" style="opacity:.7">家长小门入口</button>
+          </div>
+        </section>
+
+        <!-- ============ 02 今日首页 ============ -->
+        <section class="screen" id="scr-home" data-name="今日首页">
+          <div class="content">
+            <div class="home-head">
+              <div>
+                <div style="font-size:12px;color:var(--ink-3);font-weight:600;letter-spacing:.08em;margin-bottom:4px">周三 · 放学后</div>
+                <h1 class="h1" id="homeName">我的今日岛</h1>
+              </div>
+            </div>
+
+            <div class="anchor-strip" id="anchorStrip">
+              <svg class="ic"><use href="#i-leaf"/></svg>
+              <span>现在 · <b id="anchorNow">先安静一下</b></span>
+              <span class="next">接下来 · 休息 <span id="anchorRest">5</span> 分</span>
+            </div>
+
+            <div class="card main-card">
+              <div class="eyebrow-row">
+                <div class="eyebrow" id="homeEyebrow">现在只做一件事</div>
+                <button class="speak-btn" id="speakHome" aria-label="朗读这张卡"><svg class="ic"><use href="#i-sound"/></svg></button>
+              </div>
+              <h2 class="h2" id="homeTitle">先让脑袋安静一下</h2>
+              <p class="body-sm" id="homeDesc">不用想后面。跟着贝壳找 5 个看到的东西，完成就算回来了一点点。</p>
+              <div class="why-tag" id="homeWhy">按现在的时间安排</div>
+              <div class="meta-row">
+                <div class="dots dots-sage"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+                <span class="time" id="homeTime">约 2 分钟</span>
+              </div>
+              <button class="btn btn-green" id="homeBtn">我准备好了</button>
+            </div>
+
+            <div class="gap"></div>
+            <div class="tiles">
+              <button class="tile" data-goto="body">
+                <span class="tile-ic ti-mist"><svg class="ic"><use href="#i-cloud"/></svg></span>身体状态
+              </button>
+              <button class="tile" data-goto="step">
+                <span class="tile-ic ti-gold"><svg class="ic"><use href="#i-lighthouse"/></svg></span>做小步
+              </button>
+              <button class="tile" data-goto="rest">
+                <span class="tile-ic ti-sage"><svg class="ic"><use href="#i-waves"/></svg></span>休息 5 分
+              </button>
+            </div>
+
+            <button class="link-btn" id="restLink">现在都不想做？小岛陪你待一会儿</button>
+            <div class="distract-card" id="breatheCard" hidden>
+              <div class="h3">那就先什么也不做。</div>
+              <p>跟着泡泡慢慢呼吸，想动了再说。小岛哪儿也不去。</p>
+              <div class="breathe-dot"></div>
+              <button class="btn btn-ghost" id="breatheBack" style="min-height:44px;font-size:14px">回到小岛</button>
+            </div>
+
+            <div class="card mem-card">
+              <div class="mem-head">
+                <b>小岛轻轻记得</b>
+                <button data-goto="growth">成长树 →</button>
+              </div>
+              <div id="memList">
+                <div class="mem-row">
+                  <span class="mem-dot" style="background:var(--sage-pale);color:var(--green)"><svg class="ic"><use href="#i-check"/></svg></span>
+                  <span class="body-sm" style="font-weight:600">今天你停下来喝了水</span>
+                </div>
+                <div class="mem-row">
+                  <span class="mem-dot" style="background:var(--gold-pale);color:var(--gold-deep)"><svg class="ic"><use href="#i-sun"/></svg></span>
+                  <span class="body-sm" style="font-weight:600">下一步：拿出数学本</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 03 身体状态选择页 ============ -->
+        <section class="screen" id="scr-body" data-name="身体状态">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row">
+                <span class="chip chip-mist"><svg class="ic"><use href="#i-pulse"/></svg>身体小门</span>
+              </div>
+              <h1 class="h1">身体在说什么？</h1>
+              <p class="sub">不用说对，也不用解释。选最像现在的一张卡。</p>
+            </div>
+
+            <div class="body-grid">
+              <button class="bcard b-mist" data-pick="cloud">
+                <span class="bcard-ic" style="color:var(--mist-deep)"><svg class="ic ic-lg"><use href="#i-cloud"/></svg></span>
+                <div class="bcard-name">云团脑袋</div>
+                <div class="bcard-desc">想法挤在一起</div>
+                <div class="bcard-go">去吹吹云 · 小观察</div>
+              </button>
+              <button class="bcard b-gold" data-pick="spring">
+                <span class="bcard-ic" style="color:var(--gold-deep)"><svg class="ic ic-lg"><use href="#i-feet"/></svg></span>
+                <div class="bcard-name">弹簧腿</div>
+                <div class="bcard-desc">身体很想动</div>
+                <div class="bcard-go">去放电 · 30 秒动一动</div>
+              </button>
+              <button class="bcard b-rose" data-pick="fire">
+                <span class="bcard-ic" style="color:#A65F4B"><svg class="ic ic-lg"><use href="#i-flame"/></svg></span>
+                <div class="bcard-name">小火球</div>
+                <div class="bcard-desc">心里热热的</div>
+                <div class="bcard-go">去凉凉火 · 贝壳呼吸</div>
+              </button>
+              <button class="bcard b-sand" data-pick="battery">
+                <span class="bcard-ic" style="color:#8A7A52"><svg class="ic ic-lg"><use href="#i-battery"/></svg></span>
+                <div class="bcard-name">没电电池</div>
+                <div class="bcard-desc">需要轻一点</div>
+                <div class="bcard-go">去充电 · 休息 5 分钟</div>
+              </button>
+              <button class="bcard bcard-wide" data-pick="green" style="background:linear-gradient(165deg,#E2ECE0,#D5E3D2)">
+                <span class="bcard-ic" style="background:rgba(255,255,255,.6);color:var(--green)"><svg class="ic ic-lg"><use href="#i-golight"/></svg></span>
+                <div class="bcard-main">
+                  <div class="bcard-name">小绿灯</div>
+                  <div class="bcard-desc">我还可以</div>
+                </div>
+                <div class="bcard-go">挑一个 2 分钟小步 →</div>
+              </button>
+            </div>
+
+            <div class="card charge-card">
+              <div class="eyebrow" style="margin-bottom:2px">身体需要什么吗？</div>
+              <div class="charge-chips" id="chargeChips">
+                <button class="achip" data-charge="渴了">渴了</button>
+                <button class="achip" data-charge="饿了">饿了</button>
+                <button class="achip" data-charge="累了">累了</button>
+                <button class="achip" data-charge="想上厕所">想上厕所</button>
+              </div>
+              <div class="charge-hint" id="chargeHint" hidden></div>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" id="bodyBtn">让小岛给我下一步</button>
+          </div>
+        </section>
+
+        <!-- ============ 04 安顿流程 5-4-3-2-1 ============ -->
+        <section class="screen" id="scr-calm" data-name="安顿 · 5-4-3-2-1">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row start">
+                <button class="back-btn" data-goto="body" aria-label="返回"><svg class="ic"><use href="#i-chevleft"/></svg></button>
+                <span class="chip chip-mist"><svg class="ic"><use href="#i-cloud"/></svg>云团脑袋的小观察</span>
+              </div>
+              <h1 class="h1">把云慢慢吹开</h1>
+              <p class="sub">找到就点亮一颗小石头。不用写，也不用说。</p>
+            </div>
+
+            <div class="card sense-card" id="calmCard">
+              <button class="speak-btn corner-speak" id="speakCalm" aria-label="朗读这一步"><svg class="ic"><use href="#i-sound"/></svg></button>
+              <div id="calmPlay">
+                <div class="sense-circle"><span class="sense-num" id="calmNum">5</span></div>
+                <h2 class="h2" id="calmTitle">找 5 个你看见的东西</h2>
+                <p class="body-sm" id="calmDesc">可以是铅笔、窗帘、贝壳贴纸。找到一个，就点亮一颗小石头。</p>
+                <div class="stones" id="calmStones">
+                  <span class="stone"></span><span class="stone"></span><span class="stone"></span><span class="stone"></span><span class="stone"></span>
+                </div>
+              </div>
+              <div class="sense-map" id="senseMap">
+                <div class="srow now" data-i="0"><b>看</b><span>5 个看见的东西</span></div>
+                <div class="srow" data-i="1"><b>摸</b><span>4 个碰到的东西</span></div>
+                <div class="srow" data-i="2"><b>听</b><span>3 个小声音</span></div>
+                <div class="srow" data-i="3"><b>闻</b><span>2 个味道</span></div>
+                <div class="srow" data-i="4"><b>呼</b><span>1 口慢慢的气</span></div>
+              </div>
+              <div id="calmDone" hidden>
+                <div class="done-badge"><svg class="ic"><use href="#i-cloud"/></svg></div>
+                <h2 class="h2">云慢慢散开了</h2>
+                <p class="body-sm">5 个都找到了。刚才这几分钟，你的心思一直在这里——这就是安顿下来的感觉。</p>
+              </div>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" id="calmBtn">我找到一个了</button>
+            <button class="link-btn" id="calmSkip">想先换一步？跳过这个</button>
+          </div>
+        </section>
+
+        <!-- ============ 04.5 贝壳呼吸 ============ -->
+        <section class="screen" id="scr-breath" data-name="贝壳呼吸">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row start">
+                <button class="back-btn" data-goto="home" aria-label="返回"><svg class="ic"><use href="#i-chevleft"/></svg></button>
+                <span class="chip chip-mist"><svg class="ic"><use href="#i-shell"/></svg>贝壳呼吸 · 可停止</span>
+              </div>
+              <h1 class="h1">跟贝壳呼吸 3 次</h1>
+              <p class="sub">慢慢吸，慢慢呼。想停就停，停一下也算完成。</p>
+            </div>
+
+            <div class="card sense-card" id="breathCard">
+              <button class="speak-btn corner-speak" id="speakBreath" aria-label="朗读这一步"><svg class="ic"><use href="#i-sound"/></svg></button>
+              <div id="breathPlay">
+                <div class="breath-bubble out" id="breathBubble"></div>
+                <div class="breath-phase" id="breathPhase">准备好了吗</div>
+                <p class="body-sm">跟着泡泡：吸气 4 秒，呼气 4 秒。</p>
+                <div class="wavesteps" id="breathDots">
+                  <span class="wdot"></span><span class="wdot"></span><span class="wdot"></span>
+                </div>
+              </div>
+              <div id="breathDone" hidden>
+                <div class="done-badge" style="background:var(--mist-pale);color:var(--mist-deep)"><svg class="ic"><use href="#i-shell"/></svg></div>
+                <h2 class="h2">呼吸完了</h2>
+                <p class="body-sm">3 次呼吸做完。心跳会慢一点，火气也会退一点。</p>
+                <div class="next-up"><b>接下来可以</b>回到第一小步，或者去休息，都可以。</div>
+              </div>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" id="breathBtn">开始呼吸</button>
+          </div>
+        </section>
+
+        <!-- ============ 05 动一动流程 ============ -->
+        <section class="screen" id="scr-move" data-name="动一动 · 30 秒">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row start">
+                <button class="back-btn" data-goto="body" aria-label="返回"><svg class="ic"><use href="#i-chevleft"/></svg></button>
+                <span class="chip chip-orange"><svg class="ic"><use href="#i-feet"/></svg>弹簧腿的小出口</span>
+              </div>
+              <h1 class="h1">30 秒动一动</h1>
+            </div>
+
+            <div class="card center" id="moveCard">
+              <button class="speak-btn corner-speak" id="speakMove" aria-label="朗读这个动作"><svg class="ic"><use href="#i-sound"/></svg></button>
+              <div class="move-hero" id="moveHero">
+                <span class="move-core"><svg class="ic" style="width:36px;height:36px"><use href="#i-feet"/></svg></span>
+              </div>
+              <h2 class="h2" id="moveTitle">脚跟轻轻点地</h2>
+              <p class="body-sm" id="moveDesc" style="max-width:250px;margin:8px auto 0">坐着站着都行，脚跟轻轻点。动作很小，没人会注意。停下也算完成。</p>
+
+              <div class="gentle" style="margin-top:20px;justify-content:center;text-align:left">
+                <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+                  <circle class="track" cx="32" cy="32" r="26"/>
+                  <circle class="fg" id="moveRing" cx="32" cy="32" r="26" stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
+                </svg>
+                <div>
+                  <div class="gentle-label">温和进度</div>
+                  <div class="ring-num" id="moveSec">0 秒</div>
+                  <div class="gentle-note">不是比赛，只是帮身体放电</div>
+                </div>
+              </div>
+
+              <div class="action-chips" id="moveChips">
+                <button class="achip on" data-action="0">脚跟轻轻点地</button>
+                <button class="achip" data-action="1">甩甩手</button>
+                <button class="achip" data-action="2">踩踩地</button>
+                <button class="achip" data-action="3">伸个懒腰</button>
+              </div>
+            </div>
+
+            <div id="moveDone" hidden>
+              <div class="card center">
+                <div class="done-badge" style="background:var(--orange-pale);color:var(--orange-deep)"><svg class="ic"><use href="#i-feet"/></svg></div>
+                <h2 class="h2">身体放电了</h2>
+                <p class="body-sm">现在可以慢慢停下来。停一下，也算完成。</p>
+              </div>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-orange" id="moveBtn">开始动一动</button>
+            <button class="link-btn" data-goto="home" id="moveHome" hidden>回到小岛</button>
+          </div>
+        </section>
+
+        <!-- ============ 06 小步启动 ============ -->
+        <section class="screen" id="scr-step" data-name="小步启动 · 2 分钟">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row start">
+                <button class="back-btn" data-goto="home" aria-label="返回"><svg class="ic"><use href="#i-chevleft"/></svg></button>
+                <span class="chip chip-gold"><svg class="ic"><use href="#i-lighthouse"/></svg>灯塔小步</span>
+              </div>
+              <h1 class="h1">2 分钟开始</h1>
+            </div>
+
+            <div class="card lh-card" id="stepCard">
+              <button class="speak-btn corner-speak" id="speakStep" aria-label="朗读这一小步"><svg class="ic"><use href="#i-sound"/></svg></button>
+              <div class="lh-art">
+                <svg viewBox="0 0 220 132" width="220" height="132" aria-label="灯塔插画">
+                  <defs>
+                    <linearGradient id="beamG" x1="0" y1="1" x2="0" y2="0">
+                      <stop offset="0" stop-color="#E9C87F" stop-opacity=".5"/>
+                      <stop offset="1" stop-color="#E9C87F" stop-opacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  <polygon class="lh-beam" points="110,19 -40,-34 260,-34" fill="url(#beamG)"/>
+                  <ellipse cx="110" cy="121" rx="66" ry="7" fill="#D9D2BC"/>
+                  <path d="M96 27h28l6 92H90l6-92z" fill="#3C5D50"/>
+                  <path d="M102 52h16M100 76h20M98 100h24" stroke="#F4EFE0" stroke-width="5" stroke-linecap="round" opacity=".85"/>
+                  <path d="M94 27l16-14 16 14z" fill="#2E4A40"/>
+                  <circle cx="110" cy="19" r="6" fill="#E9C87F"/>
+                  <path d="M80 18H58M140 18h22" stroke="#E9C87F" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+                </svg>
+              </div>
+              <div id="stepPlay">
+                <div class="eyebrow">现在只做这一个动作</div>
+                <h2 class="h2" id="stepTaskTitle">把数学本打开到今天那页</h2>
+                <p class="body-sm" id="stepTaskDesc" style="margin-top:6px">打开就可以停一下。中断不是失败，小岛会帮你回到这一页。</p>
+                <div class="chip-steps" id="stepChips">
+                  <button class="schip" data-s="0"><span class="sdot"></span>拿出来</button>
+                  <button class="schip" data-s="1"><span class="sdot"></span>翻到页</button>
+                  <button class="schip" data-s="2"><span class="sdot"></span>做一题</button>
+                </div>
+                <div class="gentle" style="margin-top:18px">
+                  <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+                    <circle class="track" cx="32" cy="32" r="26"/>
+                    <circle class="fg" id="stepRing" cx="32" cy="32" r="26" stroke-dasharray="163.36" stroke-dashoffset="163.36"/>
+                  </svg>
+                  <div>
+                    <div class="gentle-label">小步灯</div>
+                    <div class="ring-num" id="stepSec">慢慢来</div>
+                    <div class="gentle-note">两分钟就好，不数倒计时</div>
+                  </div>
+                </div>
+              </div>
+              <div id="stepDone" hidden>
+                <div class="done-badge" style="background:var(--gold-pale);color:var(--gold-deep)"><svg class="ic"><use href="#i-lighthouse"/></svg></div>
+                <h2 class="h2">我开始了</h2>
+                <p class="body-sm" id="stepDoneLine">打开本子，就是今天的第一小步。</p>
+                <div class="next-up"><b>下一步可以做</b>做一题，或者就停在这里，都很好。</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow" style="margin-bottom:10px">小步图书馆 · 下次也可以从这里开始</div>
+              <div class="lib-strip" id="libStrip"></div>
+            </div>
+
+            <div class="distract-card" id="distractCard" hidden>
+              <div class="h3">没关系，我们回到第一小步。</div>
+              <p>中断不是失败。深呼吸一下，从「拿出来」重新开始就好。</p>
+              <button class="btn btn-ghost" id="distractReset" style="min-height:44px;font-size:14px">回到第一小步</button>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" id="stepBtn">我先打开本子</button>
+            <button class="link-btn" id="stepDistract">走神了？</button>
+            <button class="link-btn" data-goto="home" id="stepHome" hidden>回到小岛</button>
+          </div>
+        </section>
+
+        <!-- ============ 07 健康休息 ============ -->
+        <section class="screen" id="scr-rest" data-name="健康休息">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row">
+                <span class="chip chip-teal"><svg class="ic"><use href="#i-waves"/></svg>健康休息 · 可停止</span>
+              </div>
+              <h1 class="h1" id="restH1">休息 5 分钟</h1>
+            </div>
+
+            <div class="card card-dark-teal rest-hero" id="restHero">
+              <button class="speak-btn corner-speak" id="speakRest" aria-label="朗读这张卡"><svg class="ic"><use href="#i-sound"/></svg></button>
+              <svg class="ic-wave"><use href="#i-waves"/></svg>
+              <h2 class="h2" id="restTitle">听一段慢慢海浪</h2>
+              <p class="body-sm" id="restDesc">今天推荐这一项。声音会慢慢变小，结束时会带你收尾。</p>
+              <button class="btn btn-light" id="restStart">开始休息</button>
+              <div class="rest-now"><span class="dotp"></span><span id="restNow">在播放 · 慢慢海浪</span></div>
+              <div class="tide">
+                <div class="wave-band">
+                  <svg viewBox="0 0 800 36" preserveAspectRatio="none" width="100%" height="100%">
+                    <path d="M0 18 q25 -16 50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0 t50 0" stroke="#BFDBD6" stroke-width="4" fill="none" stroke-linecap="round"/>
+                  </svg>
+                </div>
+                <div class="tide-line"><i id="tideFill" style="width:0%"></i></div>
+              </div>
+            </div>
+
+            <p class="rest-note">不想听海浪？换一个一样安静的小休息：</p>
+            <div class="tiles-2" id="restAlts">
+              <button class="tile tile-h" data-title="听雨声" data-desc="滴滴答答。雨会慢慢变小，结束时回到下一小步。">
+                <span class="tile-ic ti-mist"><svg class="ic"><use href="#i-rain"/></svg></span>
+                <span class="tile-tx"><b>听雨声</b><span class="tdesc">雨会慢慢变小</span></span>
+              </button>
+              <button class="tile tile-h" data-title="听一个慢故事" data-desc="慢慢讲，讲不完可以明天继续。">
+                <span class="tile-ic ti-gold"><svg class="ic"><use href="#i-book"/></svg></span>
+                <span class="tile-tx"><b>慢故事</b><span class="tdesc">讲不完明天继续</span></span>
+              </button>
+              <button class="tile tile-h" data-title="涂一只慢慢鱼" data-desc="不用涂完，涂几片就算数。">
+                <span class="tile-ic ti-rose"><svg class="ic"><use href="#i-palette"/></svg></span>
+                <span class="tile-tx"><b>涂慢慢鱼</b><span class="tdesc">涂几片就算数</span></span>
+              </button>
+              <button class="tile tile-h" data-title="看云慢慢飘" data-desc="躺下来，看云变出不同的形状。">
+                <span class="tile-ic ti-mist"><svg class="ic"><use href="#i-cloud"/></svg></span>
+                <span class="tile-tx"><b>看云飘</b><span class="tdesc">看云变出形状</span></span>
+              </button>
+              <button class="tile tile-h" data-title="找 5 个圆形" data-desc="房间里的圆形，找到了就轻轻数一数。">
+                <span class="tile-ic ti-sand"><svg class="ic"><use href="#i-shapes"/></svg></span>
+                <span class="tile-tx"><b>找形状</b><span class="tdesc">找到就轻轻数</span></span>
+              </button>
+              <button class="tile tile-h" data-title="抱一会儿抱枕" data-desc="抱着一件软的东西，会踏实一点。">
+                <span class="tile-ic ti-sage"><svg class="ic"><use href="#i-heart"/></svg></span>
+                <span class="tile-tx"><b>抱枕</b><span class="tdesc">软的东西有安全感</span></span>
+              </button>
+            </div>
+
+            <div class="card charge-card">
+              <div class="eyebrow" style="margin-bottom:2px">休息的时候，身体在悄悄做什么？</div>
+              <p class="body-sm" style="font-size:12.5px">心跳慢下来，肩膀松下来，脑袋里的声音变小。不用睡着，也不用做对什么——待着就好。</p>
+            </div>
+
+            <div class="card rule-card">
+              <b>休息规则</b>
+              <p>没有排行榜，没有无限下一关。结束时小岛会帮你收尾。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 08 休息收尾 ============ -->
+        <section class="screen" id="scr-restclose" data-name="休息收尾">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row start">
+                <button class="back-btn" data-goto="rest" aria-label="返回"><svg class="ic"><use href="#i-chevleft"/></svg></button>
+                <span class="chip chip-sand"><svg class="ic"><use href="#i-box"/></svg>收尾盒</span>
+              </div>
+              <h1 class="h1">海浪要靠岸了</h1>
+            </div>
+
+            <div class="card">
+              <div class="waves-art">
+                <svg width="200" height="92" viewBox="0 0 200 92" aria-label="小海浪插画">
+                  <circle cx="100" cy="46" r="44" fill="#E4EEEC"/>
+                  <path d="M58 54c14-10 28-10 42 0s28 10 42 0" stroke="#9EC3CD" stroke-width="5" fill="none" stroke-linecap="round"/>
+                  <path d="M64 66c12-8 24-8 36 0s24 8 36 0" stroke="#BFDBDB" stroke-width="5" fill="none" stroke-linecap="round"/>
+                  <path d="M74 40c9-6 17-6 26 0s17 6 26 0" stroke="#CFE0DE" stroke-width="4" fill="none" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="center">
+                <h2 class="h2">再听 3 次小海浪</h2>
+                <p class="body-sm" style="margin-top:6px">然后喝一口水，伸一下手，回到「打开数学本」。</p>
+              </div>
+              <div class="wavesteps" id="waveSteps">
+                <span class="wdot"></span><span class="wdot"></span><span class="wdot"></span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="nrow" data-close="water">
+                <span class="nic"><svg class="ic"><use href="#i-drop"/></svg></span>
+                <span class="nt">喝一口水</span>
+                <span class="nchk"><svg class="ic"><use href="#i-check"/></svg></span>
+              </div>
+              <div class="nrow" data-close="stretch">
+                <span class="nic"><svg class="ic"><use href="#i-stretch"/></svg></span>
+                <span class="nt">手臂像树枝一样伸高</span>
+                <span class="nchk"><svg class="ic"><use href="#i-check"/></svg></span>
+              </div>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" id="closeBtn">我准备回去了</button>
+            <p class="tiny-note" id="closeNote">收尾不是任务，做到了哪一条都很好</p>
+          </div>
+        </section>
+
+        <!-- ============ 09 成长树 / 成长记录 ============ -->
+        <section class="screen" id="scr-growth" data-name="成长树">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row start">
+                <span class="chip chip-sage"><svg class="ic"><use href="#i-rings"/></svg>成长树年轮</span>
+                <span class="tag-plain">不比连续</span>
+              </div>
+              <h1 class="h1">今天的小事</h1>
+            </div>
+
+            <div class="card tree-card">
+              <svg class="tree-art" viewBox="0 0 200 150" aria-label="成长树年轮插画">
+                <circle cx="100" cy="84" r="56" fill="#EDF2E7"/>
+                <circle cx="100" cy="84" r="56" stroke="#C7D8C4" fill="none" stroke-width="1.6"/>
+                <circle cx="100" cy="84" r="42" stroke="#B9CDB5" fill="none" stroke-width="1.6"/>
+                <circle cx="100" cy="84" r="29" stroke="#A9BFA4" fill="none" stroke-width="1.6"/>
+                <circle cx="100" cy="84" r="17" fill="#DCE7D6" stroke="#9CBA95" stroke-width="1.6"/>
+                <circle cx="100" cy="84" r="7" fill="#7FA988"/>
+                <path d="M100 28v-8" stroke="#7FA988" stroke-width="2.4" stroke-linecap="round"/>
+                <path d="M100 22c0-5-3.5-8-9-8 0 5 3.5 8 9 8z" fill="#9CC09B"/>
+                <path d="M100 20c0-4 2.8-6.6 7.5-6.6 0 4-2.8 6.6-7.5 6.6z" fill="#B9D3B4"/>
+                <path d="M46 142h108" stroke="#D8CFB8" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <h2 class="h2">树记住了这些努力</h2>
+              <p class="body-sm" style="margin-top:4px">开始了、停了一下、说出来、试一试、又回来了。</p>
+            </div>
+
+            <div class="sec-label">陪伴收藏 · 小岛记得的温柔 <span>只收「我做到了」</span></div>
+            <div class="collect-strip">
+              <div class="ccard">
+                <span class="cic" style="background:var(--mist-pale);color:var(--mist-deep)"><svg class="ic"><use href="#i-cloud"/></svg></span>
+                <b>云慢慢散开</b><span>找到了 5 个看见的</span>
+              </div>
+              <div class="ccard">
+                <span class="cic" style="background:var(--orange-pale);color:var(--orange-deep)"><svg class="ic"><use href="#i-feet"/></svg></span>
+                <b>身体放电了</b><span>30 秒动一动</span>
+              </div>
+              <div class="ccard">
+                <span class="cic" style="background:var(--gold-pale);color:var(--gold-deep)"><svg class="ic"><use href="#i-book"/></svg></span>
+                <b>打开本子</b><span>迈出第一小步</span>
+              </div>
+              <div class="ccard">
+                <span class="cic" style="background:rgba(39,96,97,.14);color:var(--teal)"><svg class="ic"><use href="#i-waves"/></svg></span>
+                <b>休息后回来</b><span>海浪靠岸了</span>
+              </div>
+            </div>
+
+            <div class="card" style="padding-top:14px;padding-bottom:8px">
+              <div class="eyebrow" style="margin-bottom:2px">今天我做到的小事</div>
+              <button class="check-row" data-rec="started">
+                <span class="check-dot cd-green"><svg class="ic"><use href="#i-check"/></svg></span>
+                <span><span class="t">我开始了</span><span class="note" style="display:block">哪怕只打开了一页</span></span>
+              </button>
+              <button class="check-row" data-rec="said">
+                <span class="check-dot cd-mist"><svg class="ic"><use href="#i-check"/></svg></span>
+                <span><span class="t">我说出来了</span><span class="note" style="display:block">比如「脑袋有点吵」</span></span>
+              </button>
+              <button class="check-row" data-rec="paused">
+                <span class="check-dot cd-gold"><svg class="ic"><use href="#i-check"/></svg></span>
+                <span><span class="t">我停了一下</span><span class="note" style="display:block">停一下也是本事</span></span>
+              </button>
+              <button class="check-row" data-rec="tried">
+                <span class="check-dot cd-sage"><svg class="ic"><use href="#i-check"/></svg></span>
+                <span><span class="t">我试了一步</span><span class="note" style="display:block">不确定也算试过</span></span>
+              </button>
+              <button class="check-row" data-rec="returned">
+                <span class="check-dot cd-teal"><svg class="ic"><use href="#i-check"/></svg></span>
+                <span><span class="t">我休息后回来了</span><span class="note" style="display:block">海浪靠岸，回到小步</span></span>
+              </button>
+              <button class="check-row" data-rec="checked">
+                <span class="check-dot cd-sand"><svg class="ic"><use href="#i-check"/></svg></span>
+                <span><span class="t">我自己检查了一遍</span><span class="note" style="display:block">看单位和问题对不对</span></span>
+              </button>
+            </div>
+
+            <div class="card encourage">
+              <div class="enc-label">今天的鼓励</div>
+              <p>“你不是一直都要很专心；你能回来，就已经在长大。”</p>
+            </div>
+
+            <div class="card card-dark-green" style="padding:16px 20px">
+              <b style="font-size:13.5px">收藏规则</b>
+              <p style="font-size:12px;color:#D3DCD0;margin-top:2px">只收藏「我做到了什么」，不做排名，也不要连。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 10 轻学习 · 找线索 ============ -->
+        <section class="screen" id="scr-clues" data-name="找线索">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row">
+                <span class="chip chip-teal"><svg class="ic"><use href="#i-searchcheck"/></svg>支线 · 找线索</span>
+              </div>
+              <h1 class="h1">不会直接说答案</h1>
+              <p class="sub">我会陪你找线索、想办法、试一步；最后答案由你写出来。</p>
+            </div>
+
+            <div class="card clue-input" id="clueInputCard">
+              <span class="cic"><svg class="ic"><use href="#i-scan"/></svg></span>
+              <div class="h3">拍题 / 读题 / 说题都可以</div>
+              <button class="btn btn-teal" id="clueStart" style="margin-top:16px">开始找线索</button>
+            </div>
+
+            <div class="card" id="clueTryCard">
+              <div class="eyebrow" style="margin-bottom:8px">写一写试试 · 小岛帮你把题拆开</div>
+              <div class="clue-try-row">
+                <input class="clue-input-box" id="clueTryInput" placeholder="比如：25 + 37 = ？" maxlength="24" aria-label="写一个算式">
+                <button class="btn btn-teal" id="clueTryBtn" style="width:auto;min-width:108px;min-height:44px;font-size:14px">拆一拆</button>
+              </div>
+              <div id="clueTryOut" hidden></div>
+              <p class="tiny-note" style="text-align:left;margin-top:10px">支持整数加减乘除；应用题、分数这类更复杂的，小岛会带你直接走四步法。不会说出结果，一切都在你的手机里。</p>
+            </div>
+
+            <div class="card" style="padding-top:8px;padding-bottom:6px" id="clueStepsCard">
+              <div class="clue-step" data-step="1">
+                <span class="cnum">1</span>
+                <span><span class="ct">找一找</span><span class="cd" style="display:block">题目里给了哪些数字和词？先圈出来。</span></span>
+                <span class="cchk"><svg class="ic"><use href="#i-check"/></svg></span>
+              </div>
+              <div class="clue-step" data-step="2">
+                <span class="cnum">2</span>
+                <span><span class="ct">想一想</span><span class="cd" style="display:block">它像「合起来」，还是「拿走一部分」？</span></span>
+                <span class="cchk"><svg class="ic"><use href="#i-check"/></svg></span>
+              </div>
+              <div class="clue-step" data-step="3">
+                <span class="cnum">3</span>
+                <span><span class="ct">试一步</span><span class="cd" style="display:block">先写一个可能的式子，不确定也可以。</span></span>
+                <span class="cchk"><svg class="ic"><use href="#i-check"/></svg></span>
+              </div>
+              <div class="clue-step" data-step="4">
+                <span class="cnum">4</span>
+                <span><span class="ct">查一查</span><span class="cd" style="display:block">看单位和问题是不是对上。</span></span>
+                <span class="cchk"><svg class="ic"><use href="#i-check"/></svg></span>
+              </div>
+            </div>
+
+            <div class="hint-label">卡住了？再帮我一下 <span class="muted" style="font-weight:600;font-size:11px">（不会给答案）</span></div>
+            <div class="hint-chips" id="hintChips">
+              <button class="hchip" data-hint="draw">画图提示</button>
+              <button class="hchip" data-hint="similar">类似小题</button>
+              <button class="hchip" data-hint="next">下一小步</button>
+              <button class="hchip" data-hint="why">错因提醒</button>
+            </div>
+            <div class="hint-bubble" id="hintBubble" hidden></div>
+
+            <div class="flex-sp"></div>
+            <div class="card card-dark-teal" style="padding:16px 20px">
+              <b style="font-size:13.5px">线索规则</b>
+              <p style="font-size:12px;color:#C9D6CB;margin-top:2px">小岛不会说出最终答案，也不会替你写。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ 11 家长小门 ============ -->
+        <section class="screen" id="scr-parent" data-name="家长小门">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row">
+                <span class="chip"><svg class="ic"><use href="#i-key"/></svg>家长小门</span>
+              </div>
+              <h1 class="h1">只调必要边界</h1>
+              <p class="sub">家长设置放在后台。孩子端只看到简单、温和的下一步。</p>
+            </div>
+
+            <div class="card card-dark-green parent-dark">
+              <div class="h3">儿童端看不到复杂看板</div>
+              <p>这里帮助成人预先放好结构，孩子只会看到简单、温和的下一步。</p>
+            </div>
+
+            <div class="card" style="padding-top:6px;padding-bottom:6px">
+              <div class="set-row">
+                <div>
+                  <div class="set-name">孩子的名字</div>
+                  <div class="set-desc">首页和小岛宠物都会用它</div>
+                </div>
+                <input class="praise-input" id="pName" value="" maxlength="8" style="width:110px;text-align:right" aria-label="孩子的名字">
+              </div>
+              <div class="set-row">
+                <div>
+                  <div class="set-name">今日建议</div>
+                  <div class="set-desc">可按放学后 / 睡前 / 作业前调整</div>
+                </div>
+                <button class="seg on" id="pSuggest" style="min-width:104px">先安静一下</button>
+              </div>
+              <div class="set-row">
+                <div>
+                  <div class="set-name">休息时长</div>
+                  <div class="set-desc">孩子端只显示温和的时长</div>
+                </div>
+                <div class="seg-group" id="pRestSeg">
+                  <button class="seg" data-min="3">3 分</button>
+                  <button class="seg on" data-min="5">5 分</button>
+                  <button class="seg" data-min="10">10 分</button>
+                </div>
+              </div>
+              <div class="set-row" style="display:block">
+                <div class="set-name">鼓励语</div>
+                <input class="praise-input" id="pPraise" value="你能回来，就已经很好。" maxlength="24" aria-label="鼓励语编辑">
+                <div class="set-desc">会出现在孩子的完成卡上</div>
+              </div>
+              <div class="set-row">
+                <div>
+                  <div class="set-name">找线索不给最终答案</div>
+                  <div class="set-desc">只提供画图、类似小题和下一小步</div>
+                </div>
+                <button class="switch on" id="pNoAnswer" role="switch" aria-checked="true" aria-label="找线索不给最终答案"></button>
+              </div>
+            </div>
+
+            <p class="tiny-note">改动会温和生效，不会打断孩子正在进行的事</p>
+
+            <div class="card nested">
+              <div class="eyebrow">后台设置拆解</div>
+              <div class="h3">今日建议与休息边界</div>
+              <div class="nested-inner">
+                <div class="set-name">今日建议</div>
+                <div class="body-sm" style="margin-top:3px">先安静一下，可按放学后 / 睡前 / 作业前调整。</div>
+                <div class="child-view-pill">
+                  <svg class="ic"><use href="#i-leaf"/></svg>
+                  <span id="pChildView">儿童端只看到：先让脑袋安静一下</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card observe-card">
+              <b>简短观察摘要</b>
+              <p>这周小岛记下：安静练习 3 次，休息后回来很稳。没有分数，也不排名。</p>
+            </div>
+
+            <p class="tiny-note">家长端保持轻量：不做监控大屏，不做医疗化数据分析</p>
+          </div>
+        </section>
+
+      </main>
+
+      <!-- 底部标签栏 -->
+      <nav class="tabbar" id="tabbar">
+        <button class="tab" data-goto="home"><svg class="ic"><use href="#i-island"/></svg>小岛<i class="tab-dot"></i></button>
+        <button class="tab" data-goto="body"><svg class="ic"><use href="#i-pulse"/></svg>身体<i class="tab-dot"></i></button>
+        <button class="tab" data-goto="rest"><svg class="ic"><use href="#i-waves"/></svg>休息<i class="tab-dot"></i></button>
+        <button class="tab" data-goto="growth"><svg class="ic"><use href="#i-tree"/></svg>小树<i class="tab-dot"></i></button>
+        <button class="tab" data-goto="parent"><svg class="ic"><use href="#i-door"/></svg>小门<i class="tab-dot"></i></button>
+      </nav>
+
+      <div class="toast" id="toast"><svg class="ic"><use href="#i-check"/></svg><span id="toastText">小岛记下了</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
