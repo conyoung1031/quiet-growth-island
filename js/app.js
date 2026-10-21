@@ -127,6 +127,7 @@
   function goto(id) {
     if (!SCREENS.some(function (s) { return s.id === id; })) id = 'welcome';
     stopAll();
+    stopNature();
     document.body.setAttribute('data-screen', id);
     $$('.screen').forEach(function (sec) {
       sec.classList.toggle('active', sec.id === 'scr-' + id);
@@ -609,10 +610,88 @@
     toast('好，回到第一小步');
   });
 
+  /* ---------- 本地声音引擎：Web Audio 合成海浪 / 雨声 ----------
+     无音频文件、零网络；音量限幅（≤0.28），淡入淡出，随休息进度渐弱 */
+  var audio = { ctx: null, nodes: null, buf: null };
+  function audioCtx() {
+    if (!audio.ctx) {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      try { audio.ctx = new AC(); } catch (e) { return null; }
+    }
+    return audio.ctx;
+  }
+  function noiseBuffer(ctx) {
+    if (audio.buf) return audio.buf;
+    var len = Math.floor(ctx.sampleRate * 2);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var d = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+    audio.buf = buf;
+    return buf;
+  }
+  function stopNature() {
+    var n = audio.nodes;
+    audio.nodes = null;
+    if (!n) return;
+    try {
+      n.master.gain.cancelScheduledValues(n.ctx.currentTime);
+      n.master.gain.setTargetAtTime(0.0001, n.ctx.currentTime, 0.25);
+    } catch (e) {}
+    setTimeout(function () {
+      try { n.src.stop(); if (n.lfo) n.lfo.stop(); } catch (e) {}
+    }, 900);
+  }
+  function playNature(kind) {
+    var ctx = audioCtx();
+    if (!ctx) { console.log('[audio] WebAudio 不可用，保持静音画面'); return; }
+    if (ctx.state === 'suspended') { ctx.resume(); }
+    stopNature();
+    var master = ctx.createGain();
+    master.gain.value = 0.0001;
+    master.connect(ctx.destination);
+    var src = ctx.createBufferSource();
+    src.buffer = noiseBuffer(ctx);
+    src.loop = true;
+    var filt = ctx.createBiquadFilter();
+    var base, deep, lfoHz;
+    if (kind === 'waves')     { filt.type = 'lowpass';  filt.frequency.value = 520;  base = 0.17; deep = 0.1;  lfoHz = 0.11; }
+    else if (kind === 'rain') { filt.type = 'highpass'; filt.frequency.value = 1100; base = 0.11; deep = 0.03; lfoHz = 0.4;  }
+    else                      { filt.type = 'lowpass';  filt.frequency.value = 800;  base = 0.13; deep = 0.04; lfoHz = 0.2;  }
+    src.connect(filt); filt.connect(master);
+    var lfo = ctx.createOscillator();
+    lfo.frequency.value = lfoHz;
+    var lfoGain = ctx.createGain();
+    lfoGain.gain.value = deep;
+    lfo.connect(lfoGain);
+    lfoGain.connect(master.gain);
+    lfo.start();
+    src.start();
+    master.gain.setTargetAtTime(base, ctx.currentTime, 0.6); /* 约 1.8 秒淡入 */
+    audio.nodes = { ctx: ctx, src: src, master: master, lfo: lfo, lfoGain: lfoGain, base: base, deep: deep };
+    console.log('[audio] playing kind=' + kind + ' ctxState=' + ctx.state);
+  }
+  function audioFade(f) { /* 声音随休息进度慢慢变小（最少保留 45%） */
+    var n = audio.nodes;
+    if (!n) return;
+    try {
+      n.lfoGain.gain.value = n.deep * f;
+      n.master.gain.setTargetAtTime(n.base * f, n.ctx.currentTime, 0.25);
+    } catch (e) {}
+  }
+  function kindFor(title) {
+    var t = title || '';
+    if (t.indexOf('海浪') >= 0) return 'waves';
+    if (t.indexOf('雨') >= 0) return 'rain';
+    if (t.indexOf('故事') >= 0) return 'calm';
+    return null;
+  }
+
   /* ---------- 健康休息 ---------- */
   function resetRest() {
     S.rest = { running: false, pct: 0 };
     stop('rest');
+    stopNature();
     $('#restH1').textContent = '休息 ' + S.settings.rest + ' 分钟';
     $('#restHero').classList.remove('rest-running');
     $('#tideFill').style.width = '0%';
@@ -625,7 +704,9 @@
     tile.addEventListener('click', function () {
       $('#restTitle').textContent = tile.getAttribute('data-title');
       $('#restDesc').textContent = tile.getAttribute('data-desc');
-      if (S.rest.running) $('#restNow').textContent = '已换成 · ' + tile.getAttribute('data-title');
+      var k = kindFor(tile.getAttribute('data-title'));
+      if (S.rest.running) { if (k) playNature(k); else stopNature(); }
+      $('#restNow').textContent = '已换成 · ' + tile.getAttribute('data-title');
       toast('已换成低刺激小休息');
     });
   });
@@ -636,16 +717,21 @@
       $('#restDesc').textContent = '慢慢听，想停就停。小岛会陪你到靠岸。';
       $('#restNow').textContent = '在播放 · ' + $('#restTitle').textContent;
       $('#restStart').textContent = '提前收尾';
+      var k = kindFor($('#restTitle').textContent);
+      if (k) playNature(k);
       every('rest', 100, function () {
         S.rest.pct += 100 / 60;
         if (S.rest.pct >= 100) {
           stop('rest');
+          stopNature();
           goto('restclose');
           return;
         }
+        audioFade(1 - (S.rest.pct / 100) * 0.55); /* 声音慢慢变小 */
         $('#tideFill').style.width = S.rest.pct + '%';
       });
     } else {
+      stopNature();
       goto('restclose');
     }
   });
@@ -1130,6 +1216,17 @@
       $('#restNow').textContent = '在播放 · 慢慢海浪';
       $('#restStart').textContent = '提前收尾';
       $('#tideFill').style.width = '46%';
+      playNature('waves');
+      audioFade(0.75);
+    }
+    if (d === 'parsetest') {
+      ['25 + 37 = ？', '8 - 3', '6 × 4 = ?', '144 ÷ 12', '一道分数应用题怎么办'].forEach(function (q) {
+        var p = parseClue(q);
+        console.log('[parsetest] "' + q + '" => ' + (p ? (p.a + ' ' + p.op + ' ' + p.b) : '退回四步法'));
+      });
+      goto('clues');
+      $('#clueTryInput').value = '25 + 37 = ？';
+      $('#clueTryBtn').click();
     }
     if (d === 'cluesmid') {
       goto('clues');
