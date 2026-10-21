@@ -32,6 +32,8 @@
   var S = {
     records: {},
     name: '',
+    ageTier: 'mid',
+    ageTierChosen: false,
     settings: { suggest: 0, rest: 5 },
     sessionDone: 0,
     bodyPick: null,
@@ -63,10 +65,11 @@
       S.records = raw.r || {};
       if (raw.body) S.lastBody = raw.body;
       if (raw.name) S.name = raw.name;
+      if (raw.tier && ['young', 'mid', 'teen'].indexOf(raw.tier) >= 0) { S.ageTier = raw.tier; S.ageTierChosen = true; }
     } catch (e) { S.records = {}; }
   }
   function saveRecords() {
-    try { localStorage.setItem('qgi-records', JSON.stringify({ r: S.records, body: S.lastBody, name: S.name })); } catch (e) {}
+    try { localStorage.setItem('qgi-records', JSON.stringify({ r: S.records, body: S.lastBody, name: S.name, tier: S.ageTier })); } catch (e) {}
   }
   var MUTE = false;
   function record(key, silent) {
@@ -143,6 +146,7 @@
 
     if (id === 'calm') resetCalm();
     if (id === 'breath') resetBreath();
+    if (id === 'welcome') applyWelcome();
     if (id === 'welcome') applyName();
     if (id === 'move') resetMove();
     if (id === 'step') resetStep();
@@ -371,20 +375,24 @@
     $$('#breathDots .wdot').forEach(function (d) { d.classList.remove('on'); });
     $('#breathBtn').textContent = '开始呼吸';
   }
+  function breathCycleLen() { return S.ageTier === 'teen' ? 10 : 8; } /* 少年档：吸 4 呼 6（呼气更长，心率更稳） */
   function breathTick() {
-    breath.t += 0.1 * ACCEL; /* 8 秒一个循环（吸 4 呼 4），演示加速 */
-    var cycle = Math.floor(breath.t / 8);
-    var ph = breath.t % 8;
+    breath.t += 0.1 * ACCEL;
+    var L = breathCycleLen();
+    var cycle = Math.floor(breath.t / L);
+    var ph = breath.t % L;
+    var inSeg = S.ageTier === 'teen' ? 4 : 4;
+    var outSeg = L - inSeg;
     var b = $('#breathBubble');
-    if (ph < 4) {
+    if (ph < inSeg) {
       if (!b.classList.contains('in')) {
         b.classList.remove('out'); b.classList.add('in');
-        $('#breathPhase').textContent = '吸气…';
+        $('#breathPhase').textContent = '吸气 ' + inSeg + ' 秒…';
       }
     } else {
       if (!b.classList.contains('out')) {
         b.classList.remove('in'); b.classList.add('out');
-        $('#breathPhase').textContent = '呼气…';
+        $('#breathPhase').textContent = '呼气 ' + outSeg + ' 秒…';
       }
     }
     $$('#breathDots .wdot').forEach(function (d, i) {
@@ -399,7 +407,7 @@
     $('#breathPlay').hidden = true;
     $('#breathDone').hidden = false;
     $('#breathBtn').textContent = '回到小岛';
-    magicDone($('#breathBtn'), '呼吸真好');
+    magicDone($('#breathBtn'), doneWord('breath'));
     record('paused');
   }
   $('#breathBtn').addEventListener('click', function () {
@@ -462,7 +470,7 @@
       });
       var btn = $('#calmBtn');
       btn.textContent = '回到小岛';
-      magicDone(btn, '云散开了');
+      magicDone(btn, doneWord('calm'));
       record('paused');
       return;
     }
@@ -479,6 +487,7 @@
     { t: '伸个懒腰', d: '慢慢伸展，到最舒服的位置停 3 秒。' }
   ];
   function setMoveAction(i) {
+    S.moveActionIdx = i;
     $$('#moveChips .achip').forEach(function (c, k) { c.classList.toggle('on', k === i); });
     $('#moveTitle').textContent = ACTIONS[i].t;
     $('#moveDesc').textContent = ACTIONS[i].d;
@@ -500,24 +509,27 @@
     btn.textContent = '开始动一动';
     $('#moveHome').hidden = true;
   }
+  function moveTargetSec() { return S.ageTier === 'teen' ? 60 : 30; }
   function moveTick() {
+    var T = moveTargetSec();
     S.move.sec += 0.25 * ACCEL;
-    if (S.move.sec >= 30) { S.move.sec = 30; moveFinish(); return; }
+    if (S.move.sec >= T) { S.move.sec = T; moveFinish(); return; }
     $('#moveSec').textContent = Math.floor(S.move.sec) + ' 秒';
-    $('#moveRing').style.strokeDashoffset = RING_C * (1 - S.move.sec / 30);
+    $('#moveRing').style.strokeDashoffset = RING_C * (1 - S.move.sec / T);
   }
   function moveFinish() {
     stop('move');
     S.move.done = true;
     S.move.running = false;
+    var T = moveTargetSec();
     $('#moveHero').classList.remove('pulse');
-    $('#moveSec').textContent = '30 秒';
+    $('#moveSec').textContent = T + ' 秒';
     $('#moveRing').style.strokeDashoffset = 0;
     $('#moveCard').hidden = true;
     $('#moveDone').hidden = false;
     var btn = $('#moveBtn');
     btn.textContent = '回到小岛';
-    magicDone(btn, '放电完成');
+    magicDone(btn, doneWord('move'));
     record('paused');
   }
   $('#moveBtn').addEventListener('click', function () {
@@ -581,7 +593,7 @@
       art.classList.add('sweep');
       setTimeout(function () { art.classList.remove('sweep'); }, 2600);
     }
-    magicDone(btn, '开始了');
+    magicDone(btn, doneWord('step'));
     record('started');
   }
   $('#stepBtn').addEventListener('click', function () {
@@ -752,7 +764,7 @@
     row.addEventListener('click', function () { row.classList.toggle('done'); });
   });
   $('#closeBtn').addEventListener('click', function () {
-    magicDone(this, '回来啦');
+    magicDone(this, doneWord('close'));
     record('returned');
     toast('小岛帮你收好尾了');
     goto('home');
@@ -885,6 +897,11 @@
     $$('#pRestSeg .seg').forEach(function (s) {
       s.classList.toggle('on', parseInt(s.getAttribute('data-min'), 10) === S.settings.rest);
     });
+    $$('#pAgeSeg .seg').forEach(function (s) {
+      s.classList.toggle('on', s.getAttribute('data-age') === S.ageTier);
+    });
+    var ac = $('#autonomyCard');
+    if (ac) ac.hidden = S.ageTier !== 'teen';
   }
   $('#pSuggest').addEventListener('click', function () {
     S.settings.suggest = (S.settings.suggest + 1) % PARENT_MODES.length;
@@ -947,9 +964,38 @@
     goto('home');
   });
   $('#pName').addEventListener('input', function () { setName(this.value, true); });
+  $$('#pAgeSeg .seg').forEach(function (seg) {
+    seg.addEventListener('click', function () {
+      setAgeTier(seg.getAttribute('data-age'), true);
+    });
+  });
   var MASCOT_SAY = ['小岛在呢', '慢慢来', '我陪着你', '今天也慢慢来'];
+  function applyWelcome() {
+    applyName();
+    var age = $('#ageCard');
+    if (age) age.hidden = !!S.ageTierChosen;
+    var nc = $('#nameCard');
+    if (nc) nc.hidden = !S.ageTierChosen || !!S.name;
+  }
+  $$('#ageCard .age-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      setAgeTier(btn.getAttribute('data-age'));
+      applyWelcome();
+    });
+  });
+  $('#ageSkip').addEventListener('click', function () {
+    S.ageTierChosen = true;
+    saveRecords();
+    applyWelcome();
+  });
   /* 每页空白处的小岛场景：沙岛 + 椰子树 + 蹲着的孩子 + 四周的海 */
-  function petSVG() {
+  function petSVG(tier) {
+    var teen = tier === 'teen';
+    var kid = teen ? '' :
+      '<g class="kid">' +
+      '<circle cx="45.5" cy="56" r="4.2" fill="#3C5D50"/>' +
+      '<path d="M40 67.5c.3-4.6 2.7-7.2 5.5-7.2 2.5 0 4.3 1.7 5.3 4l1 3.2h-11.8z" fill="#3C5D50"/>' +
+      '</g>';
     return '<svg viewBox="0 0 140 100" fill="none">' +
       '<ellipse cx="70" cy="82" rx="58" ry="12" fill="#C7DCDF"/>' +
       '<path class="sea" d="M8 84c6-3.6 11-3.6 17 0" stroke="#9EC3CD" stroke-width="2.5" stroke-linecap="round"/>' +
@@ -962,10 +1008,7 @@
       '<path d="M92.5 48C97 40 103.5 35.5 111 35 106 41.5 98 46 92.5 48Z" fill="#6E9070"/>' +
       '<circle cx="90" cy="51" r="2.4" fill="#8A5A3B"/>' +
       '<circle cx="95" cy="52" r="2.4" fill="#8A5A3B"/>' +
-      '<g class="kid">' +
-      '<circle cx="45.5" cy="56" r="4.2" fill="#3C5D50"/>' +
-      '<path d="M40 67.5c.3-4.6 2.7-7.2 5.5-7.2 2.5 0 4.3 1.7 5.3 4l1 3.2h-11.8z" fill="#3C5D50"/>' +
-      '</g>' +
+      kid +
       '<text class="pet-name" x="58" y="84" text-anchor="middle">我的小岛</text>' +
       '</svg>';
   }
@@ -980,7 +1023,7 @@
       pet.className = 'island-pet' + (corner ? ' pet-tr' : '');
       pet.setAttribute('role', 'button');
       pet.setAttribute('aria-label', label);
-      pet.innerHTML = petSVG();
+      pet.innerHTML = petSVG(S.ageTier);
       if (corner) {
         content.insertBefore(pet, content.firstChild);
       } else {
@@ -1001,6 +1044,155 @@
       });
     });
     applyName();
+  }
+
+  /* ---------- 年龄档：8–10 / 11–12 / 13–15 ----------
+     同一引擎，三层文案与自主度。mid 为基准库；teen/young 只覆写差异。
+     覆写通过 Object.assign 打回原对象，所有既有引用自动生效。 */
+  var MID_BASE = null;
+  var TEEN_LIB = {
+    suggestions: {
+      observe:   { title: '先让大脑着陆', desc: '过载的时候用这个：找 5 个看到的东西，把注意力拉回房间。' },
+      breath:    { title: '呼吸降速 3 轮', desc: '烦躁或发紧时用。吸气 4 秒、呼气 6 秒，3 轮大约 1 分钟。' },
+      move:      { title: '先动 1 分钟', desc: '坐不住很正常。用 1 分钟把多余的精力放掉，再回来。' },
+      step:      { title: '只做 2 分钟', desc: '不求做完，只求开始。2 分钟后随时可以停。' },
+      idle:      { title: '那就待一会儿', desc: '不想做就先不做。呼吸几轮，想动了再说。' },
+      doneToday: { title: '今天到此为止', desc: '做得够多了。记住这个感觉：开始了，也停得下来。' }
+    },
+    actions: [
+      { d: '坐着就能做，幅度小到没人发现。停下也算完成。' },
+      { d: '手腕放松甩 30 秒，把烦躁甩出去。' },
+      null,
+      { d: '慢慢伸展，在最舒服的位置停 3 秒。' }
+    ],
+    senses: [
+      { t: '找 5 个看见的物体', d: '铅笔、水杯、窗外任何东西。找到就点亮一颗石头。' },
+      { t: '触 4 个碰到的质感', d: '桌面、衣服、椅背——注意它们的手感。' },
+      { t: '听 3 种声音', d: '远处的、近处的、你自己的呼吸。' },
+      { t: '闻 2 种气味', d: '闻不到就想象一个，也算数。' },
+      { t: '做 1 次长呼气', d: '吸气 4 秒，呼气 6 秒，只做一次。' }
+    ],
+    dom: [
+      ['.welcome-sub', 'text', '小岛每天只推荐一件事，做完就去忙你的。它不会催你，也不会替你安排生活。'],
+      ['.bcard[data-pick="cloud"] .bcard-name', 'text', '大脑过载'],
+      ['.bcard[data-pick="cloud"] .bcard-desc', 'text', '信息太多，转不动'],
+      ['.bcard[data-pick="cloud"] .bcard-go', 'text', '去降噪 · 着陆练习'],
+      ['.bcard[data-pick="spring"] .bcard-name', 'text', '坐立难安'],
+      ['.bcard[data-pick="spring"] .bcard-desc', 'text', '身体想动'],
+      ['.bcard[data-pick="spring"] .bcard-go', 'text', '去放电 · 动 1 分钟'],
+      ['.bcard[data-pick="fire"] .bcard-name', 'text', '烦躁'],
+      ['.bcard[data-pick="fire"] .bcard-desc', 'text', '一点就着'],
+      ['.bcard[data-pick="fire"] .bcard-go', 'text', '去降温 · 呼吸降速'],
+      ['.bcard[data-pick="battery"] .bcard-go', 'text', '去充电 · 休息 5 分钟'],
+      ['.bcard[data-pick="green"] .bcard-name', 'text', '状态在线'],
+      ['.bcard[data-pick="green"] .bcard-desc', 'text', '还能再推一步'],
+      ['.charge-card .eyebrow', 'text', '先检查一下身体状态'],
+      ['#scr-calm .h1', 'text', '注意力着陆 5-4-3-2-1'],
+      ['#scr-calm .sub', 'text', '循证度很高的走神急救法。照着下面的地图走一遍。'],
+      ['#senseMap .srow[data-i="0"] span', 'text', '5 个看见的物体'],
+      ['#senseMap .srow[data-i="1"] span', 'text', '4 个碰到的质感'],
+      ['#senseMap .srow[data-i="2"] span', 'text', '3 种声音'],
+      ['#senseMap .srow[data-i="3"] span', 'text', '2 种气味'],
+      ['#senseMap .srow[data-i="4"] span', 'text', '1 次长呼气'],
+      ['#scr-breath .h1', 'text', '呼吸降速 · 3 轮'],
+      ['#scr-breath .sub', 'text', '呼气比吸气长，心率会自然降下来。想停就停。'],
+      ['#breathPlay p', 'text', '跟着泡泡：吸气 4 秒，呼气 6 秒。'],
+      ['#scr-move .h1', 'text', '动 1 分钟'],
+      ['#scr-move .gentle-note', 'text', '把多余的精力放掉，不是消耗它'],
+      ['.tile[data-title="涂一只慢慢鱼"] .tile-tx b', 'text', '涂色解压'],
+      ['.tile[data-title="涂一只慢慢鱼"] .tile-tx .tdesc', 'text', '涂几笔就算数'],
+      ['.tile[data-title="涂一只慢慢鱼"]', 'attr:data-title', '涂色解压'],
+      ['.tile[data-title="涂一只慢慢鱼"]', 'attr:data-desc', '涂几笔就算数，不用涂完。']
+    ]
+  };
+  var MID_DOM = [
+    ['.welcome-sub', 'text', '小岛每天只推荐一件小事：安静一下、动一动，或迈出第一小步。其余时间，它不会打扰你。'],
+    ['.bcard[data-pick="cloud"] .bcard-name', 'text', '云团脑袋'],
+    ['.bcard[data-pick="cloud"] .bcard-desc', 'text', '想法挤在一起'],
+    ['.bcard[data-pick="cloud"] .bcard-go', 'text', '去吹吹云 · 小观察'],
+    ['.bcard[data-pick="spring"] .bcard-name', 'text', '弹簧腿'],
+    ['.bcard[data-pick="spring"] .bcard-desc', 'text', '身体很想动'],
+    ['.bcard[data-pick="spring"] .bcard-go', 'text', '去放电 · 30 秒动一动'],
+    ['.bcard[data-pick="fire"] .bcard-name', 'text', '小火球'],
+    ['.bcard[data-pick="fire"] .bcard-desc', 'text', '心里热热的'],
+    ['.bcard[data-pick="fire"] .bcard-go', 'text', '去凉凉火 · 贝壳呼吸'],
+    ['.bcard[data-pick="battery"] .bcard-go', 'text', '去充电 · 休息 5 分钟'],
+    ['.bcard[data-pick="green"] .bcard-name', 'text', '小绿灯'],
+    ['.bcard[data-pick="green"] .bcard-desc', 'text', '我还可以'],
+    ['.charge-card .eyebrow', 'text', '身体需要什么吗？'],
+    ['#scr-calm .h1', 'text', '把云慢慢吹开'],
+    ['#scr-calm .sub', 'text', '找到就点亮一颗小石头。不用写，也不用说。'],
+    ['#senseMap .srow[data-i="0"] span', 'text', '5 个看见的东西'],
+    ['#senseMap .srow[data-i="1"] span', 'text', '4 个碰到的东西'],
+    ['#senseMap .srow[data-i="2"] span', 'text', '3 个小声音'],
+    ['#senseMap .srow[data-i="3"] span', 'text', '2 个味道'],
+    ['#senseMap .srow[data-i="4"] span', 'text', '1 口慢慢的气'],
+    ['#scr-breath .h1', 'text', '跟贝壳呼吸 3 次'],
+    ['#scr-breath .sub', 'text', '慢慢吸，慢慢呼。想停就停，停一下也算完成。'],
+    ['#breathPlay p', 'text', '跟着泡泡：吸气 4 秒，呼气 4 秒。'],
+    ['#scr-move .h1', 'text', '30 秒动一动'],
+    ['#scr-move .gentle-note', 'text', '不是比赛，只是帮身体放电'],
+    ['.tile[data-title="涂一只慢慢鱼"] .tile-tx b', 'text', '涂慢慢鱼'],
+    ['.tile[data-title="涂一只慢慢鱼"] .tile-tx .tdesc', 'text', '涂几片就算数'],
+    ['.tile[data-title="涂一只慢慢鱼"]', 'attr:data-title', '涂一只慢慢鱼'],
+    ['.tile[data-title="涂一只慢慢鱼"]', 'attr:data-desc', '不用涂完，涂几片就算数。']
+  ];
+  function applyDom(it) {
+    var el = document.querySelector(it[0]);
+    if (!el) return;
+    if (it[1] === 'text') el.textContent = it[2];
+    else if (it[1].indexOf('attr:') === 0) el.setAttribute(it[1].slice(5), it[2]);
+  }
+  function snap(o) { return JSON.parse(JSON.stringify(o)); }
+  function mergeIdx(target, src) {
+    (src || []).forEach(function (it, i) { if (it && target[i]) Object.assign(target[i], it); });
+  }
+  function applyTier(tier) {
+    if (['young', 'mid', 'teen'].indexOf(tier) < 0) tier = 'mid';
+    S.ageTier = tier;
+    if (!MID_BASE) MID_BASE = { s: snap(SUGGESTIONS), a: snap(ACTIONS), e: snap(SENSES) };
+    var isTeen = tier === 'teen';
+    var sBase = snap(MID_BASE.s), aBase = snap(MID_BASE.a), eBase = snap(MID_BASE.e);
+    Object.keys(sBase).forEach(function (k) { Object.assign(SUGGESTIONS[k], sBase[k]); });
+    mergeIdx(ACTIONS, aBase);
+    mergeIdx(SENSES, eBase);
+    if (isTeen) {
+      Object.keys(TEEN_LIB.suggestions).forEach(function (k) {
+        if (SUGGESTIONS[k]) Object.assign(SUGGESTIONS[k], TEEN_LIB.suggestions[k]);
+      });
+      mergeIdx(ACTIONS, TEEN_LIB.actions);
+      mergeIdx(SENSES, TEEN_LIB.senses);
+    }
+    MID_DOM.forEach(applyDom);
+    if (isTeen) TEEN_LIB.dom.forEach(applyDom);
+    document.body.classList.toggle('tier-teen', isTeen);
+    /* 重渲染受影响的部分 */
+    renderHome();
+    buildLib();
+    applyStepTask(false);
+    applySense(Math.min(S.calm.i || 0, SENSES.length - 1));
+    setMoveAction(S.moveActionIdx || 0);
+    $$('.island-pet').forEach(function (p) { p.remove(); });
+    buildIslandPets();
+    applyParentUI();
+  }
+  function setAgeTier(t, silent) {
+    S.ageTier = ['young', 'mid', 'teen'].indexOf(t) >= 0 ? t : 'mid';
+    S.ageTierChosen = true;
+    saveRecords();
+    applyTier(S.ageTier);
+    if (!silent) toast(S.ageTier === 'teen' ? '已切换到少年版' : '已切换');
+  }
+  function doneWord(key) {
+    var teen = S.ageTier === 'teen';
+    var W = {
+      calm:   teen ? '着陆完成' : '云散开了',
+      move:   '放电完成',
+      step:   '开始了',
+      breath: teen ? '降速完成' : '呼吸真好',
+      close:  '回来啦'
+    };
+    return W[key];
   }
 
   /* ---------- 启动 ---------- */
@@ -1169,6 +1361,9 @@
   if (!isNaN(sessN)) S.sessionDone = sessN;
   var nm = params.get('name');
   if (nm) S.name = nm.slice(0, 8);
+  var ageP = params.get('age');
+  if (ageP && ['young', 'mid', 'teen'].indexOf(ageP) >= 0) { S.ageTier = ageP; S.ageTierChosen = true; }
+  applyTier(S.ageTier);
   buildRail();
   renderHome();
   buildLib();

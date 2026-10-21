@@ -103,6 +103,15 @@
               <h1 class="welcome-h1">今天，我们慢慢来。</h1>
               <p class="welcome-sub">小岛每天只推荐一件小事：安静一下、动一动，或迈出第一小步。其余时间，它不会打扰你。</p>
               <div class="welcome-greet" id="welcomeGreet" hidden></div>
+              <div class="card name-card" id="ageCard" hidden>
+                <div class="eyebrow" style="margin-bottom:8px">你大概多大？（决定小岛怎么陪你）</div>
+                <div class="age-row">
+                  <button class="age-btn" data-age="young">8–10 岁</button>
+                  <button class="age-btn" data-age="mid">11–12 岁</button>
+                  <button class="age-btn" data-age="teen">13–15 岁</button>
+                </div>
+                <button class="link-btn" id="ageSkip">跳过</button>
+              </div>
               <div class="card name-card" id="nameCard" hidden>
                 <div class="eyebrow" style="margin-bottom:6px">小岛想知道你的名字</div>
                 <input class="name-input" id="nameInput" maxlength="8" placeholder="写下你的名字" aria-label="你的名字">
@@ -748,7 +757,23 @@
               <p>这里帮助成人预先放好结构，孩子只会看到简单、温和的下一步。</p>
             </div>
 
+            <div class="card autonomy-card" id="autonomyCard" hidden>
+              <b>自主模式 · 13–15 岁</b>
+              <p>这个年龄最怕被安排。下面的设置会变成「默认值」，孩子可以自己调整；你保留观察摘要，其余交给 TA。</p>
+            </div>
+
             <div class="card" style="padding-top:6px;padding-bottom:6px">
+              <div class="set-row">
+                <div>
+                  <div class="set-name">年龄档</div>
+                  <div class="set-desc">决定文案、时长与自主度</div>
+                </div>
+                <div class="seg-group" id="pAgeSeg">
+                  <button class="seg" data-age="young">8–10</button>
+                  <button class="seg on" data-age="mid">11–12</button>
+                  <button class="seg" data-age="teen">13–15</button>
+                </div>
+              </div>
               <div class="set-row">
                 <div>
                   <div class="set-name">孩子的名字</div>
