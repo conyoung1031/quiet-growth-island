@@ -622,9 +622,10 @@
     toast('好，回到第一小步');
   });
 
-  /* ---------- 本地声音引擎：Web Audio 合成海浪 / 雨声 ----------
-     无音频文件、零网络；音量限幅（≤0.28），淡入淡出，随休息进度渐弱 */
-  var audio = { ctx: null, nodes: null, buf: null };
+  /* ---------- 本地声音引擎 v2：分层实时合成 ----------
+     海浪=棕噪音+双重浪涌；雨=白噪双层；森林=沙沙+阵风+随机鸟鸣；
+     无音频文件、零网络；音量限幅，淡入淡出，随休息进度渐弱 */
+  var audio = { ctx: null, nodes: null, bufs: {}, birdTimer: null };
   function audioCtx() {
     if (!audio.ctx) {
       var AC = window.AudioContext || window.webkitAudioContext;
@@ -633,31 +634,54 @@
     }
     return audio.ctx;
   }
-  function noiseBuffer(ctx) {
-    if (audio.buf) return audio.buf;
-    var len = Math.floor(ctx.sampleRate * 2);
+  function noiseBuffer(ctx, kind) {
+    var key = kind || 'white';
+    if (audio.bufs[key]) return audio.bufs[key];
+    var len = Math.floor(ctx.sampleRate * 2.5);
     var buf = ctx.createBuffer(1, len, ctx.sampleRate);
     var d = buf.getChannelData(0);
-    for (var i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-    audio.buf = buf;
+    var last = 0;
+    for (var i = 0; i < len; i++) {
+      var w = Math.random() * 2 - 1;
+      if (key === 'brown') { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.4; }
+      else d[i] = w;
+    }
+    audio.bufs[key] = buf;
     return buf;
+  }
+  function noiseSrc(ctx, kind) {
+    var s = ctx.createBufferSource();
+    s.buffer = noiseBuffer(ctx, kind);
+    s.loop = true;
+    return s;
+  }
+  function biquad(ctx, type, freq) {
+    var f = ctx.createBiquadFilter();
+    f.type = type;
+    f.frequency.value = freq;
+    return f;
+  }
+  function lfo(ctx, dest, freq, depth) {
+    var o = ctx.createOscillator();
+    o.frequency.value = freq;
+    var g = ctx.createGain();
+    g.gain.value = depth;
+    o.connect(g); g.connect(dest); o.start();
+    return { g: g, depth: depth, stop: function () { try { o.stop(); g.disconnect(); } catch (e) {} } };
   }
   function stopNature() {
     var n = audio.nodes;
     audio.nodes = null;
+    if (audio.birdTimer) { clearTimeout(audio.birdTimer); audio.birdTimer = null; }
     try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
     if (!n) return;
     try {
       n.master.gain.cancelScheduledValues(n.ctx.currentTime);
-      n.master.gain.setTargetAtTime(0.0001, n.ctx.currentTime, 0.25);
+      n.master.gain.setTargetAtTime(0.0001, n.ctx.currentTime, 0.3);
     } catch (e) {}
     setTimeout(function () {
-      try {
-        if (n.src) n.src.stop();
-        if (n.osc) n.osc.forEach(function (o) { o.stop(); });
-        if (n.lfo) n.lfo.stop();
-      } catch (e) {}
-    }, 900);
+      (n.stops || []).forEach(function (fn) { try { fn(); } catch (e) {} });
+    }, 1000);
   }
   function playNature(kind) {
     var ctx = audioCtx();
@@ -667,61 +691,100 @@
     var master = ctx.createGain();
     master.gain.value = 0.0001;
     master.connect(ctx.destination);
-    var base, deep, lfoHz;
-    var src = null, filt = null, osc = [];
+    var stops = [], lfos = [];
+    var base = 0.14, modDepth = 0.03;
+    function mod(freq, depth) {
+      lfos.push(lfo(ctx, master.gain, freq, depth));
+    }
     if (kind === 'waves') {
-      /* 重均衡：140Hz 高通去隆隆声 + 950Hz 低通保浪白，笔记本喇叭也能听清 */
-      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
-      var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 140;
-      filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 950;
-      src.connect(hp); hp.connect(filt); filt.connect(master);
-      base = 0.2; deep = 0.09; lfoHz = 0.11;
+      /* 棕噪音海浪：双重浪涌（主浪 11s + 慢涌 43s），最接近真实浪声 */
+      var src = noiseSrc(ctx, 'brown');
+      var lp = biquad(ctx, 'lowpass', 420);
+      src.connect(lp); lp.connect(master);
+      base = 0.22; modDepth = 0.045;
+      mod(0.09, 0.11); mod(0.023, 0.07);
+      stops.push(function () { try { src.stop(); } catch (e) {} });
     } else if (kind === 'rain') {
-      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
-      filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 1100;
-      src.connect(filt); filt.connect(master);
-      base = 0.12; deep = 0.03; lfoHz = 0.4;
+      /* 双层雨：高频细密层 + 中频雨幕层，轻微强度起伏 */
+      var src = noiseSrc(ctx, 'white');
+      var hp = biquad(ctx, 'highpass', 900);
+      var lp = biquad(ctx, 'lowpass', 5200);
+      src.connect(hp); hp.connect(lp); lp.connect(master);
+      base = 0.11; modDepth = 0.02;
+      mod(0.4, 0.02);
+      stops.push(function () { try { src.stop(); } catch (e) {} });
     } else if (kind === 'forest') {
-      /* 森林风：350–1500Hz 频段的沙沙声，0.3Hz 阵风起伏 */
-      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
-      var fh = ctx.createBiquadFilter(); fh.type = 'highpass'; fh.frequency.value = 350;
-      filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 1500;
-      src.connect(fh); fh.connect(filt); filt.connect(master);
-      base = 0.13; deep = 0.06; lfoHz = 0.3;
+      /* 森林风：带通沙沙 + 阵风起伏 + 随机鸟鸣 */
+      var src = noiseSrc(ctx, 'white');
+      var bp1 = biquad(ctx, 'highpass', 380);
+      var bp2 = biquad(ctx, 'lowpass', 1300);
+      src.connect(bp1); bp1.connect(bp2); bp2.connect(master);
+      base = 0.12; modDepth = 0.055;
+      mod(0.3, 0.05); mod(0.07, 0.02);
+      stops.push(function () { try { src.stop(); } catch (e) {} });
+      scheduleBirds();
     } else if (kind === 'pad') {
-      /* 轻音床：三支正弦叠一个温暖的和声，看云/找形状/抱枕/涂色用 */
-      base = 0.05; deep = 0.015; lfoHz = 0.15;
+      /* 暖和音床：三支正弦 */
+      base = 0.05; modDepth = 0.015;
+      mod(0.15, 0.015);
       [[110, 0.03], [164.8, 0.02], [220, 0.012]].forEach(function (cfg) {
         var o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = cfg[0];
         var g = ctx.createGain(); g.gain.value = cfg[1];
         o.connect(g); g.connect(master); o.start();
-        osc.push(o);
+        stops.push(function () { try { o.stop(); } catch (e) {} });
       });
     } else { /* calm：轻底噪 */
-      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
-      filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
-      src.connect(filt); filt.connect(master);
-      base = 0.07; deep = 0.02; lfoHz = 0.2;
+      var src = noiseSrc(ctx, 'brown');
+      var lp = biquad(ctx, 'lowpass', 500);
+      src.connect(lp); lp.connect(master);
+      base = 0.08; modDepth = 0.02;
+      mod(0.15, 0.02);
+      stops.push(function () { try { src.stop(); } catch (e) {} });
     }
-    var lfo = ctx.createOscillator();
-    lfo.frequency.value = lfoHz;
-    var lfoGain = ctx.createGain();
-    lfoGain.gain.value = deep;
-    lfo.connect(lfoGain);
-    lfoGain.connect(master.gain);
-    lfo.start();
-    if (src) src.start();
-    master.gain.setTargetAtTime(base, ctx.currentTime, 0.6); /* 约 1.8 秒淡入 */
-    audio.nodes = { ctx: ctx, src: src, master: master, lfo: lfo, lfoGain: lfoGain, base: base, deep: deep, osc: osc };
+    master.gain.setTargetAtTime(base, ctx.currentTime, 0.7); /* 约 2 秒淡入 */
+    audio.nodes = { ctx: ctx, master: master, base: base, modDepth: modDepth, stops: stops, lfos: lfos, kind: kind };
     console.log('[audio] playing kind=' + kind + ' ctxState=' + ctx.state);
   }
   function audioFade(f) { /* 声音随休息进度慢慢变小（最少保留 45%） */
     var n = audio.nodes;
     if (!n) return;
     try {
-      n.lfoGain.gain.value = n.deep * f;
-      n.master.gain.setTargetAtTime(n.base * f, n.ctx.currentTime, 0.25);
+      n.master.gain.setTargetAtTime(n.base * Math.max(f, 0.45), n.ctx.currentTime, 0.25);
+      n.lfos.forEach(function (l) { l.g.gain.value = l.depth * Math.max(f, 0.45); });
     } catch (e) {}
+  }
+  function chirp(dest) {
+    var ctx = audio.ctx; if (!ctx) return;
+    var t0 = ctx.currentTime;
+    var f1 = 2300 + Math.random() * 1400;
+    var o1 = ctx.createOscillator(), g1 = ctx.createGain();
+    o1.type = 'sine';
+    o1.frequency.setValueAtTime(f1, t0);
+    o1.frequency.exponentialRampToValueAtTime(f1 * 1.5, t0 + 0.05);
+    o1.frequency.exponentialRampToValueAtTime(f1 * 0.8, t0 + 0.11);
+    g1.gain.setValueAtTime(0.0001, t0);
+    g1.gain.exponentialRampToValueAtTime(0.02 + Math.random() * 0.012, t0 + 0.02);
+    g1.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.13);
+    o1.connect(g1); g1.connect(dest);
+    o1.start(t0); o1.stop(t0 + 0.15);
+    var o2 = ctx.createOscillator(), g2 = ctx.createGain();
+    var t1 = t0 + 0.16;
+    o2.type = 'sine';
+    o2.frequency.setValueAtTime(f1 * 1.2, t1);
+    o2.frequency.exponentialRampToValueAtTime(f1 * 0.9, t1 + 0.08);
+    g2.gain.setValueAtTime(0.0001, t1);
+    g2.gain.exponentialRampToValueAtTime(0.018, t1 + 0.015);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t1 + 0.1);
+    o2.connect(g2); g2.connect(dest);
+    o2.start(t1); o2.stop(t1 + 0.12);
+  }
+  function scheduleBirds() {
+    audio.birdTimer = setTimeout(function () {
+      var n = audio.nodes;
+      if (!n || n.kind !== 'forest') return;
+      chirp(n.master);
+      scheduleBirds();
+    }, 2500 + Math.random() * 6000);
   }
   function kindFor(title) {
     var t = title || '';
