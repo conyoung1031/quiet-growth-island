@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>安静成长岛 · 移动端 UI 原型</title>
+<title>安静成长岛</title>
+<meta name="theme-color" content="#F5EFE6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="description" content="给容易分心的孩子，一个慢慢长大的小地方。纯本地运行，不收集数据。">
 <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 21V10" stroke="%23456B5E" stroke-width="2" stroke-linecap="round"/><path d="M12 13C8.6 13 6.5 10.9 6.5 7.5c3.4 0 5.5 2.1 5.5 5.5z" fill="%237FA988"/><path d="M12 11c0-2.7 1.9-4.5 5-4.5 0 2.7-1.9 4.5-5 4.5z" fill="%23A9C4A4"/></svg>'>
 <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -128,6 +135,7 @@
             <button class="btn btn-green" data-goto="home">去看看今天的小建议</button>
             <p class="tiny-note">安静成长岛 · 给容易分心的孩子一个慢慢长大的小地方</p>
             <button class="link-btn" data-goto="parent" style="opacity:.7">家长小门入口</button>
+            <button class="link-btn" data-goto="privacy" style="opacity:.6">隐私与安全说明</button>
           </div>
         </section>
 
@@ -834,6 +842,43 @@
             </div>
 
             <p class="tiny-note">家长端保持轻量：不做监控大屏，不做医疗化数据分析</p>
+            <button class="link-btn" data-goto="privacy" style="opacity:.75">隐私与安全说明</button>
+          </div>
+        </section>
+
+        <!-- ============ 12 隐私与安全 ============ -->
+        <section class="screen" id="scr-privacy" data-name="隐私与安全">
+          <div class="content">
+            <div class="pagehead">
+              <div class="ph-row">
+                <span class="chip chip-sage"><svg class="ic"><use href="#i-heart"/></svg>小岛承诺</span>
+              </div>
+              <h1 class="h1">数据只在这台设备上</h1>
+              <p class="sub">没有账号，不上传，不追踪。名字、记录和设置只保存在你的手机里。</p>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow" style="margin-bottom:6px">隐私</div>
+              <p class="body-sm">小岛不联网、没有服务器。即使断网，它也能完整使用。换设备或卸载前，你可以把数据导出成一份文件带走。</p>
+              <div class="btn-stack" style="margin-top:14px">
+                <button class="btn btn-ghost" id="privacyExport" style="min-height:46px;font-size:14px">导出我的数据</button>
+                <button class="btn btn-ghost" id="privacyClear" style="min-height:46px;font-size:14px;color:#A65F4B">清除所有数据</button>
+              </div>
+            </div>
+
+            <div class="card" style="background:linear-gradient(150deg,#F0E6C8,#E9DCB8);border-color:rgba(201,156,75,.25)">
+              <div class="eyebrow" style="color:#7A5C2E;margin-bottom:6px">边界</div>
+              <p class="body-sm" style="color:#7A6B4A">小岛不是医生，不诊断、不治疗，也不能替代专业帮助。如果孩子情绪非常激烈、长时间低落，或出现危险行为——请先找身边的大人，必要时拨打 120 或心理援助热线。</p>
+            </div>
+
+            <div class="card">
+              <div class="eyebrow" style="margin-bottom:6px">关于</div>
+              <p class="body-sm">安静成长岛 · 给容易分心的孩子一个慢慢长大的小地方。<br>版本 0.1 · 纯本地原型</p>
+              <p class="tiny-note" style="text-align:left;margin-top:10px">不比较 · 不催促 · 不打分</p>
+            </div>
+
+            <div class="flex-sp"></div>
+            <button class="btn btn-green" data-goto="parent">回到家长小门</button>
           </div>
         </section>
 

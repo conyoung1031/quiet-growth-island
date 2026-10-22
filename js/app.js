@@ -23,7 +23,8 @@
     { id: 'restclose', en: 'LANDING' },
     { id: 'growth',    en: 'GROWTH TREE' },
     { id: 'clues',     en: 'CLUE ROPE' },
-    { id: 'parent',    en: 'PARENT GATE' }
+    { id: 'parent',    en: 'PARENT GATE' },
+    { id: 'privacy',   en: 'ABOUT & PRIVACY' }
   ];
 
   var RING_C = 163.36;
@@ -1299,6 +1300,40 @@
     };
     return W[key];
   }
+
+  /* ---------- PWA 注册 + 隐私数据操作 ---------- */
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').then(function () {
+        console.log('[pwa] service worker registered');
+      }).catch(function (e) {
+        console.log('[pwa] sw 注册失败（不影响使用）');
+      });
+    });
+  }
+  $('#privacyExport').addEventListener('click', function () {
+    try {
+      var raw = {};
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        raw[k] = localStorage.getItem(k);
+      }
+      var blob = new Blob([JSON.stringify({ app: 'quiet-growth-island', exportedAt: new Date().toISOString(), data: raw }, null, 2)], { type: 'application/json' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '安静成长岛-数据.json';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+      toast('数据已经导出');
+    } catch (e) { toast('这次没导出成功，稍后再试'); }
+  });
+  $('#privacyClear').addEventListener('click', function () {
+    if (window.confirm('真的要清除所有数据吗？名字、记录和设置都会消失。')) {
+      try { localStorage.clear(); } catch (e) {}
+      location.reload();
+    }
+  });
 
   /* ---------- 启动 ---------- */
   /* ---------- 弹性触感系统：按压 Q 弹 + 成功粒子 + 水波纹 ----------
