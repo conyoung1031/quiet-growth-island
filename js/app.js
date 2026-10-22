@@ -148,11 +148,42 @@
     if (id === 'calm') resetCalm();
     if (id === 'breath') resetBreath();
     if (id === 'welcome') applyWelcome();
-    if (id === 'welcome') applyName();
     if (id === 'move') resetMove();
     if (id === 'step') resetStep();
     if (id === 'rest') resetRest();
     if (id === 'restclose') startWaves();
+    staggerContent();
+    updateTabInd();
+  }
+
+  /* 内容 stagger 入场：屏幕切换时每个子块错峰浮现（高级感的关键） */
+  function staggerContent() {
+    if (!motionOK()) return;
+    var scr = document.querySelector('.screen.active .content');
+    if (!scr) return;
+    Array.prototype.forEach.call(scr.children, function (el, i) {
+      el.classList.remove('stag');
+      if (el.style) el.style.animationDelay = (i * 45) + 'ms';
+      void el.offsetWidth;
+      el.classList.add('stag');
+      el.addEventListener('animationend', function h(ev) {
+        if (ev.animationName !== 'stagIn') return;
+        el.classList.remove('stag');
+        if (el.style) el.style.animationDelay = '';
+        el.removeEventListener('animationend', h);
+      });
+    });
+  }
+
+  /* 底部标签滑动指示器 */
+  function updateTabInd() {
+    var ind = $('#tabInd');
+    if (!ind) return;
+    var t = document.querySelector('.tab.active');
+    if (!t) { ind.style.opacity = '0'; return; }
+    ind.style.opacity = '1';
+    ind.style.width = Math.max(56, t.offsetWidth - 12) + 'px';
+    ind.style.transform = 'translateX(' + (t.offsetLeft + 6) + 'px)';
   }
 
   /* 原型侧栏 */
@@ -1433,6 +1464,14 @@
     warmFlash();
     meteors(3);
     if (word) floatWord(el, word);
+    /* 卡片掠光：完成瞬间一道柔光扫过 */
+    var card = el.closest ? el.closest('.card') : null;
+    if (card) {
+      card.classList.remove('sheen');
+      void card.offsetWidth;
+      card.classList.add('sheen');
+      setTimeout(function () { card.classList.remove('sheen'); }, 1250);
+    }
   }
   /* 环境魔法：小岛上的萤火虫（暖金色，缓慢漂移） */
   function spawnFireflies() {
