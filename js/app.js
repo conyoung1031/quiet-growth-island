@@ -185,7 +185,7 @@
     move:      { label: '先动一动',     title: '先来 30 秒动一动', desc: '身体想动的话，先帮它放放电，再慢慢回来。',                     time: '约 1 分钟', goto: 'move',  btn: '我准备好了' },
     step:      { label: '先做一小步',   title: '先做 2 分钟小步', desc: '只开始一件事。打开就可以停一下，中断不算失败。',               time: '约 2 分钟', goto: 'step',  btn: '我准备好了' },
     waves:     { label: '听海浪',       title: '可以休息 5 分钟', desc: '听一段慢慢海浪。声音会慢慢变小，结束回下一小步。',             time: '约 5 分钟', goto: 'rest',  btn: '我想休息' },
-    story:     { label: '听慢故事',     title: '听一个慢故事',   desc: '慢慢听。讲不完可以明天继续。',                                 time: '约 5 分钟', goto: 'rest',  btn: '我想听' },
+    forest:    { label: '听森林风',     title: '听一阵森林风',   desc: '树叶沙沙，风一阵一阵地吹。',                                   time: '约 5 分钟', goto: 'rest',  btn: '我想听' },
     idle:      { label: '待一会儿',     title: '那就待一会儿',   desc: '什么都不用做。跟着泡泡呼吸，想动了再说。',                       time: '不着急',   goto: '_breatheCard', btn: '陪我待一会儿' },
     doneToday: { label: '今天已经够啦', title: '今天已经够啦',   desc: '小岛也要休息啦。明天它还在这儿等你。',                           time: '今天到此',  goto: '_bye',  btn: '明天见' }
   };
@@ -195,7 +195,7 @@
     var bodyMap = { cloud: 'observe', fire: 'breath', spring: 'move', battery: 'waves', green: 'step' };
     if (S.lastBody && bodyMap[S.lastBody]) return { id: bodyMap[S.lastBody], why: '跟着你选的身体状态' };
     var h = S.qaHour != null ? S.qaHour : new Date().getHours();
-    if (h >= 20 || h < 6) return { id: 'story', why: '现在晚了，安排轻一点的' };   /* 睡前安全线：夜间只推轻内容 */
+    if (h >= 20 || h < 6) return { id: 'waves', why: '现在晚了，安排轻一点的' };   /* 睡前安全线：夜间只推轻内容 */
     if (h >= 18 && h < 20) return { id: 'step', why: '按现在的时间安排' };         /* 作业前 */
     var mode = PARENT_MODES[S.settings.suggest] || PARENT_MODES[0];
     if (mode.mode !== 'auto') return { id: mode.mode, why: '家长今天预设的' };
@@ -238,9 +238,9 @@
     }
     if (g === '_bye') { toast('明天见 🌿'); return; }
     goto(g);
-    if (S.curSug === 'story') { /* 慢故事预设：进入休息页后切换内容 */
-      $('#restTitle').textContent = '听一个慢故事';
-      $('#restDesc').textContent = '慢慢听，讲不完可以明天继续。声音轻轻的。';
+    if (S.curSug === 'forest') { /* 森林风预设：进入休息页后切换内容 */
+      $('#restTitle').textContent = '听一阵森林风';
+      $('#restDesc').textContent = '树叶沙沙，风一阵一阵地吹。想停就停。';
       $('#restStart').textContent = '开始听';
     }
   });
@@ -659,34 +659,11 @@
       } catch (e) {}
     }, 900);
   }
-  function playStoryVoice() {
-    try {
-      if (!window.speechSynthesis) return false;
-      var txt = '很小很小的地方，有一座慢慢岛。' +
-        '岛上的树，一天只长一片叶子。海浪来的时候，树就把叶子翻个面，像跟海打招呼。' +
-        '一个孩子蹲在树下，数天上的云。一朵，两朵，三朵。' +
-        '数着数着，风把云吹散了。散掉的云，明天还会回来。' +
-        '你也是。休息好了，明天又是新的一天。';
-      var u = new SpeechSynthesisUtterance(txt);
-      u.lang = 'zh-CN'; u.rate = 0.82; u.pitch = 0.95; u.volume = 0.9;
-      var vs = speechSynthesis.getVoices();
-      for (var i = 0; i < vs.length; i++) {
-        if (vs[i].lang && vs[i].lang.indexOf('zh') === 0) { u.voice = vs[i]; break; }
-      }
-      u.onend = function () { audio.story = false; };
-      speechSynthesis.cancel();
-      speechSynthesis.speak(u);
-      audio.story = true;
-      console.log('[story] TTS started, zhVoices=' + vs.length);
-      return true;
-    } catch (e) { return false; }
-  }
   function playNature(kind) {
     var ctx = audioCtx();
     if (!ctx) { console.log('[audio] WebAudio 不可用，保持静音画面'); return; }
     if (ctx.state === 'suspended') { ctx.resume(); }
     stopNature();
-    if (kind === 'story') playStoryVoice();
     var master = ctx.createGain();
     master.gain.value = 0.0001;
     master.connect(ctx.destination);
@@ -704,6 +681,13 @@
       filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 1100;
       src.connect(filt); filt.connect(master);
       base = 0.12; deep = 0.03; lfoHz = 0.4;
+    } else if (kind === 'forest') {
+      /* 森林风：350–1500Hz 频段的沙沙声，0.3Hz 阵风起伏 */
+      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
+      var fh = ctx.createBiquadFilter(); fh.type = 'highpass'; fh.frequency.value = 350;
+      filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 1500;
+      src.connect(fh); fh.connect(filt); filt.connect(master);
+      base = 0.13; deep = 0.06; lfoHz = 0.3;
     } else if (kind === 'pad') {
       /* 轻音床：三支正弦叠一个温暖的和声，看云/找形状/抱枕/涂色用 */
       base = 0.05; deep = 0.015; lfoHz = 0.15;
@@ -713,7 +697,7 @@
         o.connect(g); g.connect(master); o.start();
         osc.push(o);
       });
-    } else { /* calm：慢故事的轻底噪 */
+    } else { /* calm：轻底噪 */
       src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
       filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
       src.connect(filt); filt.connect(master);
@@ -743,7 +727,7 @@
     var t = title || '';
     if (t.indexOf('海浪') >= 0) return 'waves';
     if (t.indexOf('雨') >= 0) return 'rain';
-    if (t.indexOf('故事') >= 0) return 'story';
+    if (t.indexOf('森林') >= 0 || t.indexOf('树叶') >= 0) return 'forest';
     if (t.indexOf('云') >= 0) return 'pad';
     if (t.indexOf('形状') >= 0 || t.indexOf('圆形') >= 0) return 'pad';
     if (t.indexOf('抱') >= 0) return 'pad';
@@ -1472,13 +1456,13 @@
       playNature('waves');
       audioFade(0.75);
     }
-    if (d === 'storyrun') {
+    if (d === 'forestrun') {
       goto('rest');
       S.rest.running = true;
       $('#restHero').classList.add('rest-running');
-      $('#restTitle').textContent = '听一个慢故事';
-      $('#restNow').textContent = '在播放 · 听一个慢故事';
-      playNature('story');
+      $('#restTitle').textContent = '听一阵森林风';
+      $('#restNow').textContent = '在播放 · 听一阵森林风';
+      playNature('forest');
     }
     if (d === 'parsetest') {
       ['25 + 37 = ？', '8 - 3', '6 × 4 = ?', '144 ÷ 12', '一道分数应用题怎么办'].forEach(function (q) {
