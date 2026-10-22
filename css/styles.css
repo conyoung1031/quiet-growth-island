@@ -1056,8 +1056,9 @@ body.noanim *,body.noanim *::before,body.noanim *::after{
 .island-pet .sea{animation:seaSway 6s ease-in-out infinite alternate}
 .island-pet .kid{animation:kidNod 8s ease-in-out infinite;transform-origin:45.5px 41px}
 .pet-name{
-  font-family:var(--font-display);font-weight:600;
-  font-size:12px;fill:#7A5C3A;letter-spacing:1px;
+  font-family:"Xingkai SC","STXingkai","Wawati SC","HanziPen SC","Kaiti SC","STKaiti","KaiTi",cursive;
+  font-weight:400;font-size:14px;fill:#8A6B45;letter-spacing:2.5px;
+  filter:url(#sandRough);
 }
 @keyframes petBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes seaSway{from{transform:translateX(-1.5px)}to{transform:translateX(1.5px)}}

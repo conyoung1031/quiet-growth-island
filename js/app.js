@@ -645,32 +645,80 @@
   function stopNature() {
     var n = audio.nodes;
     audio.nodes = null;
+    try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {}
     if (!n) return;
     try {
       n.master.gain.cancelScheduledValues(n.ctx.currentTime);
       n.master.gain.setTargetAtTime(0.0001, n.ctx.currentTime, 0.25);
     } catch (e) {}
     setTimeout(function () {
-      try { n.src.stop(); if (n.lfo) n.lfo.stop(); } catch (e) {}
+      try {
+        if (n.src) n.src.stop();
+        if (n.osc) n.osc.forEach(function (o) { o.stop(); });
+        if (n.lfo) n.lfo.stop();
+      } catch (e) {}
     }, 900);
+  }
+  function playStoryVoice() {
+    try {
+      if (!window.speechSynthesis) return false;
+      var txt = '很小很小的地方，有一座慢慢岛。' +
+        '岛上的树，一天只长一片叶子。海浪来的时候，树就把叶子翻个面，像跟海打招呼。' +
+        '一个孩子蹲在树下，数天上的云。一朵，两朵，三朵。' +
+        '数着数着，风把云吹散了。散掉的云，明天还会回来。' +
+        '你也是。休息好了，明天又是新的一天。';
+      var u = new SpeechSynthesisUtterance(txt);
+      u.lang = 'zh-CN'; u.rate = 0.82; u.pitch = 0.95; u.volume = 0.9;
+      var vs = speechSynthesis.getVoices();
+      for (var i = 0; i < vs.length; i++) {
+        if (vs[i].lang && vs[i].lang.indexOf('zh') === 0) { u.voice = vs[i]; break; }
+      }
+      u.onend = function () { audio.story = false; };
+      speechSynthesis.cancel();
+      speechSynthesis.speak(u);
+      audio.story = true;
+      console.log('[story] TTS started, zhVoices=' + vs.length);
+      return true;
+    } catch (e) { return false; }
   }
   function playNature(kind) {
     var ctx = audioCtx();
     if (!ctx) { console.log('[audio] WebAudio 不可用，保持静音画面'); return; }
     if (ctx.state === 'suspended') { ctx.resume(); }
     stopNature();
+    if (kind === 'story') playStoryVoice();
     var master = ctx.createGain();
     master.gain.value = 0.0001;
     master.connect(ctx.destination);
-    var src = ctx.createBufferSource();
-    src.buffer = noiseBuffer(ctx);
-    src.loop = true;
-    var filt = ctx.createBiquadFilter();
     var base, deep, lfoHz;
-    if (kind === 'waves')     { filt.type = 'lowpass';  filt.frequency.value = 520;  base = 0.17; deep = 0.1;  lfoHz = 0.11; }
-    else if (kind === 'rain') { filt.type = 'highpass'; filt.frequency.value = 1100; base = 0.11; deep = 0.03; lfoHz = 0.4;  }
-    else                      { filt.type = 'lowpass';  filt.frequency.value = 800;  base = 0.13; deep = 0.04; lfoHz = 0.2;  }
-    src.connect(filt); filt.connect(master);
+    var src = null, filt = null, osc = [];
+    if (kind === 'waves') {
+      /* 重均衡：140Hz 高通去隆隆声 + 950Hz 低通保浪白，笔记本喇叭也能听清 */
+      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
+      var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 140;
+      filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 950;
+      src.connect(hp); hp.connect(filt); filt.connect(master);
+      base = 0.2; deep = 0.09; lfoHz = 0.11;
+    } else if (kind === 'rain') {
+      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
+      filt = ctx.createBiquadFilter(); filt.type = 'highpass'; filt.frequency.value = 1100;
+      src.connect(filt); filt.connect(master);
+      base = 0.12; deep = 0.03; lfoHz = 0.4;
+    } else if (kind === 'pad') {
+      /* 轻音床：三支正弦叠一个温暖的和声，看云/找形状/抱枕/涂色用 */
+      base = 0.05; deep = 0.015; lfoHz = 0.15;
+      [[110, 0.03], [164.8, 0.02], [220, 0.012]].forEach(function (cfg) {
+        var o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = cfg[0];
+        var g = ctx.createGain(); g.gain.value = cfg[1];
+        o.connect(g); g.connect(master); o.start();
+        osc.push(o);
+      });
+    } else { /* calm：慢故事的轻底噪 */
+      src = ctx.createBufferSource(); src.buffer = noiseBuffer(ctx); src.loop = true;
+      filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
+      src.connect(filt); filt.connect(master);
+      base = 0.07; deep = 0.02; lfoHz = 0.2;
+    }
     var lfo = ctx.createOscillator();
     lfo.frequency.value = lfoHz;
     var lfoGain = ctx.createGain();
@@ -678,9 +726,9 @@
     lfo.connect(lfoGain);
     lfoGain.connect(master.gain);
     lfo.start();
-    src.start();
+    if (src) src.start();
     master.gain.setTargetAtTime(base, ctx.currentTime, 0.6); /* 约 1.8 秒淡入 */
-    audio.nodes = { ctx: ctx, src: src, master: master, lfo: lfo, lfoGain: lfoGain, base: base, deep: deep };
+    audio.nodes = { ctx: ctx, src: src, master: master, lfo: lfo, lfoGain: lfoGain, base: base, deep: deep, osc: osc };
     console.log('[audio] playing kind=' + kind + ' ctxState=' + ctx.state);
   }
   function audioFade(f) { /* 声音随休息进度慢慢变小（最少保留 45%） */
@@ -695,7 +743,11 @@
     var t = title || '';
     if (t.indexOf('海浪') >= 0) return 'waves';
     if (t.indexOf('雨') >= 0) return 'rain';
-    if (t.indexOf('故事') >= 0) return 'calm';
+    if (t.indexOf('故事') >= 0) return 'story';
+    if (t.indexOf('云') >= 0) return 'pad';
+    if (t.indexOf('形状') >= 0 || t.indexOf('圆形') >= 0) return 'pad';
+    if (t.indexOf('抱') >= 0) return 'pad';
+    if (t.indexOf('涂') >= 0 || t.indexOf('鱼') >= 0) return 'pad';
     return null;
   }
 
@@ -997,6 +1049,12 @@
       '<path d="M40 67.5c.3-4.6 2.7-7.2 5.5-7.2 2.5 0 4.3 1.7 5.3 4l1 3.2h-11.8z" fill="#3C5D50"/>' +
       '</g>';
     return '<svg viewBox="0 0 140 100" fill="none">' +
+      '<defs>' +
+      '<filter id="sandRough" x="-20%" y="-20%" width="140%" height="140%">' +
+      '<feTurbulence type="fractalNoise" baseFrequency="0.07" numOctaves="2" seed="7" result="n"/>' +
+      '<feDisplacementMap in="SourceGraphic" in2="n" scale="2.4"/>' +
+      '</filter>' +
+      '</defs>' +
       '<ellipse cx="70" cy="82" rx="58" ry="12" fill="#C7DCDF"/>' +
       '<path class="sea" d="M8 84c6-3.6 11-3.6 17 0" stroke="#9EC3CD" stroke-width="2.5" stroke-linecap="round"/>' +
       '<path class="sea" d="M118 84c6-3.6 11-3.6 17 0" stroke="#9EC3CD" stroke-width="2.5" stroke-linecap="round"/>' +
@@ -1009,7 +1067,7 @@
       '<circle cx="90" cy="51" r="2.4" fill="#8A5A3B"/>' +
       '<circle cx="95" cy="52" r="2.4" fill="#8A5A3B"/>' +
       kid +
-      '<text class="pet-name" x="58" y="84" text-anchor="middle">我的小岛</text>' +
+      '<text class="pet-name" x="58" y="84" text-anchor="middle" transform="rotate(-3 58 84)" filter="url(#sandRough)">我的小岛</text>' +
       '</svg>';
   }
   var PET_SCREENS = ['home', 'body', 'calm', 'breath', 'move', 'step', 'rest', 'restclose', 'growth', 'clues', 'parent'];
@@ -1413,6 +1471,14 @@
       $('#tideFill').style.width = '46%';
       playNature('waves');
       audioFade(0.75);
+    }
+    if (d === 'storyrun') {
+      goto('rest');
+      S.rest.running = true;
+      $('#restHero').classList.add('rest-running');
+      $('#restTitle').textContent = '听一个慢故事';
+      $('#restNow').textContent = '在播放 · 听一个慢故事';
+      playNature('story');
     }
     if (d === 'parsetest') {
       ['25 + 37 = ？', '8 - 3', '6 × 4 = ?', '144 ÷ 12', '一道分数应用题怎么办'].forEach(function (q) {
