@@ -1,5 +1,5 @@
 /* 安静成长岛 · Service Worker：应用壳缓存，离线可用 */
-var CACHE = 'qgi-v1';
+var CACHE = 'qgi-v2';
 var ASSETS = [
   './',
   './index.html',
