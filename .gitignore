@@ -1,3 +1,18 @@
 .DS_Store
 *.log
 Thumbs.db
+
+# Capacitor / npm 打包产物
+node_modules/
+dist/
+
+# Android 构建产物与本机配置（cap sync / gradle 会重新生成）
+android/build/
+android/app/build/
+android/.gradle/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+*.apk

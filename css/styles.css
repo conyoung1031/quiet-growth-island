@@ -1163,3 +1163,25 @@ body.noanim *,body.noanim *::before,body.noanim *::after{
 .h2{letter-spacing:-.004em;text-wrap:balance}
 .welcome-h1{letter-spacing:-.008em}
 body.noanim .content > .stag{opacity:1}
+
+/* ===================== 原生 APK 全屏模式（body.native） =====================
+   Capacitor 打包时由 JS 加上。宽屏（平板 / 横屏）下也会是"手机全屏"布局：
+   不出原型导航栏、不出手机边框、不出假状态栏（用安卓自己的状态栏）。 */
+body.native{overflow:hidden}
+body.native .stage{display:block;padding:0;min-height:100vh;min-height:100dvh;background:var(--paper)}
+body.native .rail{display:none}
+body.native .device{margin:0;width:100%;max-width:none}
+body.native .device-screen{
+  width:100%;max-width:none;
+  height:100vh;height:100dvh;
+  outline:none;border-radius:0;box-shadow:none;
+  background:var(--paper);
+}
+body.native .statusbar{display:none}
+body.native .viewport{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden}
+/* 平板 / 横屏下不把卡片拉满屏，正文保持手机宽度的可读行宽 */
+@media (min-width:560px){
+  body.native .content{max-width:520px;margin-left:auto;margin-right:auto}
+  body.native .tabbar{left:50%;transform:translateX(-50%);max-width:520px}
+  body.native .toast{max-width:460px}
+}

@@ -1,0 +1,24 @@
+{
+  "name": "quiet-growth-island",
+  "version": "1.0.0",
+  "private": true,
+  "description": "安静成长岛 · PWA 与 Android（Capacitor）打包",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-web.mjs",
+    "icons": "node scripts/gen-android-icons.mjs",
+    "sync": "npm run build && npx cap sync android",
+    "apk": "npm run build && npm run icons && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "apk:release": "npm run build && npm run icons && npx cap sync android && cd android && ./gradlew assembleRelease"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.3"
+  }
+}

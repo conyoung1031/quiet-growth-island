@@ -1,0 +1,25 @@
+{
+  "appId": "com.conyoung.island",
+  "appName": "安静成长岛",
+  "webDir": "dist",
+  "backgroundColor": "#F6F1E6",
+  "android": {
+    "backgroundColor": "#F6F1E6",
+    "allowMixedContent": false,
+    "captureInput": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 700,
+      "launchAutoHide": true,
+      "backgroundColor": "#F6F1E6",
+      "showSpinner": false,
+      "androidScaleType": "CENTER_CROP"
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#F6F1E6",
+      "overlaysWebView": false
+    }
+  }
+}

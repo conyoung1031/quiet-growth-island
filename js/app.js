@@ -35,7 +35,9 @@
     name: '',
     ageTier: 'mid',
     ageTierChosen: false,
-    settings: { suggest: 0, rest: 5 },
+    /* 家长设置：全部会持久化，刷新/重开不丢 */
+    settings: { suggest: 0, rest: 5, noAnswer: true },
+    praise: '',
     sessionDone: 0,
     bodyPick: null,
     calm: { i: 0, done: false },
@@ -78,10 +80,22 @@
       if (raw.body) S.lastBody = raw.body;
       if (raw.name) S.name = raw.name;
       if (raw.tier && ['young', 'mid', 'teen'].indexOf(raw.tier) >= 0) { S.ageTier = raw.tier; S.ageTierChosen = true; }
+      /* 家长设置：老版本存档没有这些字段时保持默认，不报错 */
+      if (raw.settings && typeof raw.settings === 'object') {
+        if ([0, 1, 2, 3, 4].indexOf(raw.settings.suggest) >= 0) S.settings.suggest = raw.settings.suggest;
+        if ([3, 5, 10].indexOf(raw.settings.rest) >= 0) S.settings.rest = raw.settings.rest;
+        if (typeof raw.settings.noAnswer === 'boolean') S.settings.noAnswer = raw.settings.noAnswer;
+      }
+      if (typeof raw.praise === 'string' && raw.praise.trim()) S.praise = raw.praise.trim();
     } catch (e) { S.records = {}; }
   }
   function saveRecords() {
-    try { localStorage.setItem('qgi-records', JSON.stringify({ r: S.records, body: S.lastBody, name: S.name, tier: S.ageTier })); } catch (e) {}
+    try {
+      localStorage.setItem('qgi-records', JSON.stringify({
+        r: S.records, body: S.lastBody, name: S.name, tier: S.ageTier,
+        settings: S.settings, praise: S.praise
+      }));
+    } catch (e) {}
   }
   var MUTE = false;
   function record(key, silent) {
@@ -111,6 +125,7 @@
       var on = !!S.records[row.getAttribute('data-rec')];
       row.classList.toggle('done', on);
     });
+    applyPraise(); /* 家长写的鼓励语，始终显示在「今天的鼓励」卡上 */
   }
 
   function renderMem() {
@@ -163,6 +178,9 @@
     if (id === 'step') resetStep();
     if (id === 'rest') resetRest();
     if (id === 'restclose') startWaves();
+    /* 每次回到首页都重新决定建议：孩子选了身体状态、家长改了设置、
+       时间变了，首页都必须是当下这一条，而不是启动时那条旧的 */
+    if (id === 'home') renderHome();
     staggerContent();
     updateTabInd();
   }
@@ -259,7 +277,9 @@
     S.homeAction = m.goto;
     $('#homeEyebrow').textContent = d.id === 'doneToday' ? '小岛轻轻说' : '现在只做一件事';
     $('#homeWhy').textContent = d.why;
-    $('#homeTitle').textContent = m.title;
+    $('#homeTitle').textContent = d.id === 'waves'
+      ? '可以休息 ' + S.settings.rest + ' 分钟'   /* 分钟数跟着家长设置走，别和设置打架 */
+      : m.title;
     $('#homeDesc').textContent = m.desc;
     $('#homeTime').textContent = m.time;
     $('#homeBtn').textContent = m.btn;
@@ -888,8 +908,11 @@
       $('#restStart').textContent = '提前收尾';
       var k = kindFor($('#restTitle').textContent);
       if (k) playNature(k);
+      /* 时长跟随家长设置的分钟数（原来写死 60 拍 = 6 秒，设置项等于摆设）；
+         ACCEL 与呼吸/动一动/小步一致，只是演示加速 */
+      var ticks = Math.max(60, Math.round(S.settings.rest * 60 / ACCEL / 0.1));
       every('rest', 100, function () {
-        S.rest.pct += 100 / 60;
+        S.rest.pct += 100 / ticks;
         if (S.rest.pct >= 100) {
           stop('rest');
           stopNature();
@@ -971,12 +994,16 @@
 
   /* ---------- 找线索 · 纯规则题目解析（零模型；「不给答案」由代码强制执行） ---------- */
   function parseClue(str) {
-    var m = String(str).replace(/[？?=＝]/g, ' ').match(/(\d+)\s*([+\-＋－×xX*÷／])\s*(\d+)/);
+    var s = String(str).replace(/[？?=＝]/g, ' ');
+    /* 分数（1/2、1／3）先不解析：数字会被当成两个独立数字，给出"先画 2 个小点"这种错误引导。
+       直接退回四步法，比给错提示更安全。 */
+    if (/\d\s*[\/⁄／]\s*\d/.test(s)) return null;
+    var m = s.match(/(\d+)\s*([+\-＋－×xX*÷])\s*(\d+)/);
     if (!m) return null;
     var opRaw = m[2];
     var op = (opRaw === '+' || opRaw === '＋') ? 'plus'
            : (opRaw === '×' || opRaw === 'x' || opRaw === 'X' || opRaw === '*') ? 'mul'
-           : (opRaw === '÷' || opRaw === '／') ? 'div' : 'minus';
+           : (opRaw === '÷') ? 'div' : 'minus';
     return { a: parseInt(m[1], 10), op: op, b: parseInt(m[3], 10) };
   }
   function clueHints(p) {
@@ -1018,10 +1045,14 @@
   }
   $('#clueTryBtn').addEventListener('click', function () {
     var out = $('#clueTryOut');
-    var p = parseClue($('#clueTryInput').value);
+    var p = S.settings.noAnswer === false ? parseClue($('#clueTryInput').value) : null;
     if (!p) {
       out.hidden = false;
-      out.innerHTML = '<div class="parse-item"><b>试一试</b><span>小岛还没学会这种题。没关系，用下面四步来：先找一找数字和词。</span></div>';
+      out.innerHTML = '<div class="parse-item"><b>试一试</b><span>' +
+        (S.settings.noAnswer === false
+          ? '小岛还没学会这种题。没关系，用下面四步来：先找一找数字和词。'
+          : '家长开了「不给最终答案」。用下面四步来：先找一找数字和词，再想一想。') +
+        '</span></div>';
       return;
     }
     out.hidden = false;
@@ -1047,16 +1078,33 @@
     step:    '儿童端看到：先做 2 分钟小步',
     waves:   '儿童端看到：可以休息 5 分钟'
   };
+  /* 鼓励语：家长写的那句话，出现在孩子成长页的「今天的鼓励」卡上 */
+  var PRAISE_DEFAULT = '你能回来，就已经很好。';
+  function applyPraise() {
+    var v = (S.praise || '').trim() || PRAISE_DEFAULT;
+    var p = $('#scr-growth .encourage p');
+    if (p) p.textContent = '“' + v + '”';
+    var input = $('#pPraise');
+    if (input && document.activeElement !== input) input.value = S.praise || PRAISE_DEFAULT;
+  }
   function applyParentUI() {
     var mode = PARENT_MODES[S.settings.suggest] || PARENT_MODES[0];
     $('#pSuggest').textContent = mode.label;
-    $('#pChildView').textContent = SUGGEST_CHILD[mode.mode];
+    $('#pChildView').textContent = mode.mode === 'waves'
+      ? '儿童端看到：可以休息 ' + S.settings.rest + ' 分钟'
+      : SUGGEST_CHILD[mode.mode];
     $$('#pRestSeg .seg').forEach(function (s) {
       s.classList.toggle('on', parseInt(s.getAttribute('data-min'), 10) === S.settings.rest);
     });
     $$('#pAgeSeg .seg').forEach(function (s) {
       s.classList.toggle('on', s.getAttribute('data-age') === S.ageTier);
     });
+    var na = $('#pNoAnswer');
+    if (na) {
+      na.classList.toggle('on', S.settings.noAnswer !== false);
+      na.setAttribute('aria-checked', S.settings.noAnswer !== false ? 'true' : 'false');
+    }
+    applyPraise();
     var ac = $('#autonomyCard');
     if (ac) ac.hidden = S.ageTier !== 'teen';
   }
@@ -1064,6 +1112,7 @@
     S.settings.suggest = (S.settings.suggest + 1) % PARENT_MODES.length;
     applyParentUI();
     renderHome();
+    saveRecords();
     toast('孩子端的建议已更新');
   });
   $$('#pRestSeg .seg').forEach(function (seg) {
@@ -1071,6 +1120,7 @@
       S.settings.rest = parseInt(seg.getAttribute('data-min'), 10);
       applyParentUI();
       renderHome();
+      saveRecords();
       if (document.body.getAttribute('data-screen') === 'rest') {
         $('#restH1').textContent = '休息 ' + S.settings.rest + ' 分钟';
       }
@@ -1078,11 +1128,15 @@
   });
   $('#pNoAnswer').addEventListener('click', function () {
     var on = this.classList.toggle('on');
+    S.settings.noAnswer = on;
     this.setAttribute('aria-checked', on ? 'true' : 'false');
+    saveRecords();
+    toast(on ? '找线索只给提示，不给最终答案' : '找线索会给出更多分析');
   });
   $('#pPraise').addEventListener('input', function () {
-    var v = this.value.trim() || '你能回来，就已经很好。';
-    $('#scr-growth .encourage p').textContent = '“' + v + '”';
+    S.praise = this.value.trim();
+    applyPraise();
+    saveRecords();
   });
 
   /* ---------- 名字与小岛宠物 ---------- */
@@ -1428,7 +1482,11 @@
   }
 
   /* ---------- PWA 注册 + 隐私数据操作 ---------- */
-  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  /* 原生壳（Capacitor）里不要注册 Service Worker：资源已随 APK 打包，
+     由 Capacitor 的本地服务器直接提供，SW 只会多余地拦截请求 */
+  var inNative = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+  if (inNative) document.body.classList.add('native'); /* 原生壳：全屏布局，不出原型导航栏/手机边框/假状态栏 */
+  if ('serviceWorker' in navigator && !inNative && location.protocol.indexOf('http') === 0) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('sw.js').then(function () {
         console.log('[pwa] service worker registered');
