@@ -1,0 +1,145 @@
+/* =============================================================
+   安静成长岛 · ADHD 友好色板 v2
+   加载顺序：styles.css → palette.css → fx.css
+   只覆写原有设计令牌的名字，不改任何类名，
+   因此 JS 动态生成的 .chip-mist / .ti-gold 等结构全部照常工作。
+
+   设计依据（色彩心理学 / 神经多样性研究）：
+   · ADHD 儿童在低饱和、低对比、自然色系环境中专注更久、躁动更少
+   · 蓝绿系（鼠尾草绿 / 雾蓝）降低唤醒度，帮助回到"平静而清醒"
+   · 暖中性色（燕麦、沙、陶土）提供安全感，替代高刺激的纯橙纯黄
+   · 避免纯黑纯白与高饱和三原色：眩光与强对比会持续抢占注意
+   · 文字对比度仍保持 WCAG AA（正文 ≥ 4.5:1），低刺激 ≠ 看不清
+   ============================================================= */
+
+:root{
+  /* ---------- 纸与卡：燕麦暖白，降低屏幕眩光 ---------- */
+  --paper:#F6F1E6;
+  --paper-deep:#EFE7D5;
+  --card:#FFFDF7;
+  --card-2:#FAF5EA;
+
+  /* ---------- 墨色：深松绿，替代纯黑 ---------- */
+  --ink:#2F3D36;          /* 正文，对比 ≈ 10:1 */
+  --ink-2:#5B6B60;        /* 次级，对比 ≈ 5.0:1 */
+  /* 提示色：比原稿深一档。原来 2.7–3.0:1，孩子看小字很吃力，现全部达 AA ≥4.5:1。
+     刻意与 --ink-2 接近：可读性优先于层级，层级交给字号/字重 */
+  --ink-3:#656F65;
+  --hair:rgba(47,61,54,.11);
+  --hair-soft:rgba(47,61,54,.07);
+
+  /* ---------- 语义色：全部降饱和约 8–14% ---------- */
+  /* 行动 / 平静：鼠尾草深绿。白字对比 ≈ 5.0:1 */
+  --green:#4C7264;
+  --green-deep:#3A5A4E;
+  /* 成长：柔和苔绿 */
+  --sage:#86AE8D;
+  --sage-pale:#DFEADA;
+  /* 休息：雾青，比原来浅一档，减少压迫感。白字对比 ≈ 5.7:1 */
+  --teal:#2E6A66;
+  --teal-deep:#22514E;
+  /* 动一动：陶土杏色（不是警报橙）。刻意改用深色文字，对比 ≈ 6.4:1 */
+  --orange:#E0A585;
+  --orange-deep:#BE7B5B;
+  --orange-pale:#F7E6D8;
+  /* 暖光：青铜金。原稿的浅金在浅底上对比只有 2.4:1，小字读不清 */
+  --gold:#E7C989;
+  --gold-deep:#7A5E1E;
+  --gold-pale:#F6EACB;
+  /* 平静：薄雾蓝（深一档，保证 12px 小字 ≥4.8:1） */
+  --mist:#A6C5CE;
+  --mist-deep:#456B75;
+  --mist-pale:#E0ECEF;
+  /* 小火球：褪色珊瑚，不再刺眼 */
+  --rose:#DDB1A4;
+  --rose-pale:#F6E3DD;
+  /* 沙 */
+  --sand:#E9E0C9;
+
+  /* ---------- 深色卡上的文字 ---------- */
+  --on-dark:#F7F4E7;
+  --on-dark-2:#D3DCD2;
+}
+
+/* 杏色按钮改用深棕字：比原来的白字清楚得多 */
+.btn-orange{color:#3A2A20}
+.btn-orange .ic{color:#3A2A20}
+
+/* 陶土色系上的小字也一并加深，保证可读 */
+.bcard.b-rose .bcard-go{color:#9A5A46}
+.chip-rose{color:#9A5A46}
+/* 绿眉标在浅绿底上用更深的一档，避免 12px 小字对比不足 */
+.chip-sage{color:var(--green-deep)}
+
+/* 主卡片：从"绿到黄"的对比过渡，改成几乎同明度的奶油渐变，
+   减少色块跳跃带来的视觉抢眼 */
+.main-card{
+  background:linear-gradient(150deg,#E8F1EA 0%,#FBF4E5 62%,#FDF8EC 100%);
+}
+
+/* 身体卡：整体再降一档饱和，让 5 张卡看起来像同一套色系 */
+.b-mist{background:linear-gradient(165deg,#E2EDEE,#D3E2E4)}
+.b-gold{background:linear-gradient(165deg,#F6E9CB,#EED9AE)}
+.b-rose{background:linear-gradient(165deg,#F6E1D8,#EBCBBE)}
+.b-sand{background:linear-gradient(165deg,#ECE7D6,#E0DAC2)}
+
+/* 深色卡：把纯黑阴影换成同色系深绿/深青，边缘更柔 */
+.card-dark-green{
+  background:
+    radial-gradient(rgba(255,255,255,.13) 1px, transparent 1.4px) 0 0/13px 13px,
+    linear-gradient(150deg,#54796A,#42604F);
+}
+.card-dark-teal{
+  background:
+    radial-gradient(rgba(255,255,255,.12) 1px, transparent 1.4px) 0 0/13px 13px,
+    linear-gradient(155deg,#35706B,#245351);
+}
+
+/* 页面底色：纸张纹理更淡，避免"脏"和噪点刺激 */
+body{background:var(--paper-deep)}
+.stage{
+  background:
+    radial-gradient(rgba(47,61,54,.035) 1px, transparent 1.4px) 0 0/26px 26px,
+    linear-gradient(160deg,#F1EBDE,#E9E1CE);
+}
+.device-screen{
+  background:
+    radial-gradient(rgba(47,61,54,.035) 1px, transparent 1.3px) 0 0/24px 24px,
+    var(--paper);
+}
+
+/* ---------- 一天中的光线：晚上自动变暖变暗一点 ---------- */
+body[data-daypart="evening"]{
+  --paper:#F2EBDD;
+  --card:#FCF8EE;
+  --card-2:#F6EFE2;
+}
+body[data-daypart="evening"] .device-screen{
+  background:
+    radial-gradient(rgba(47,61,54,.04) 1px, transparent 1.3px) 0 0/24px 24px,
+    linear-gradient(180deg,#F4EDDF,#EFE5D3);
+}
+body[data-daypart="night"]{
+  --paper:#EDE6D8;
+  --card:#F9F4E9;
+  --card-2:#F3ECDF;
+  --ink:#2B3831;
+}
+body[data-daypart="night"] .device-screen{
+  background:
+    radial-gradient(rgba(47,61,54,.045) 1px, transparent 1.3px) 0 0/24px 24px,
+    linear-gradient(180deg,#EFE7D7,#E8DECB);
+}
+
+/* 高对比度系统偏好：把墨色再压深，照顾低视力 */
+@media (prefers-contrast:more){
+  :root{
+    --ink:#1F2A24;
+    --ink-2:#42524A;
+    --ink-3:#5E6C63;
+    --green:#3B5F52;
+    --teal:#215652;
+    --gold-deep:#96742F;
+    --mist-deep:#3E6B76;
+  }
+}

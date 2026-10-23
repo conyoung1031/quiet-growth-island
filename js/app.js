@@ -41,13 +41,24 @@
     calm: { i: 0, done: false },
     move: { running: false, sec: 0, done: false },
     step: { running: false, sec: 0, done: false, task: 0 },
-    rest: { running: false, pct: 0 }
+    rest: { running: false, pct: 0 },
+    declinedOnce: false,
+    lastBody: null,
+    curSug: null,
+    homeAction: null,
+    moveActionIdx: 0
   };
 
   var timers = {};
+  var fxEls = []; // 临时特效元素（流星 / 飘叶），导航时统一清理
   function every(name, ms, fn) { stop(name); timers[name] = setInterval(fn, ms); }
   function stop(name) { if (timers[name]) { clearInterval(timers[name]); delete timers[name]; } }
-  function stopAll() { Object.keys(timers).forEach(stop); }
+  function stopAll() { 
+    Object.keys(timers).forEach(stop);
+    // 清理临时特效元素，避免切换页面后残留
+    fxEls.forEach(function (el) { try { el.remove(); } catch (e) {} });
+    fxEls = [];
+  }
 
   /* ---------- 成长记录（过程行为） ---------- */
   var RECS = {
@@ -166,10 +177,17 @@
       if (el.style) el.style.animationDelay = (i * 45) + 'ms';
       void el.offsetWidth;
       el.classList.add('stag');
+      /* 兜底：即使 animationend 被系统/后台标签页吞掉，也一定会恢复可见 */
+      if (el._stagTimer) clearTimeout(el._stagTimer);
+      el._stagTimer = setTimeout(function () {
+        el.classList.remove('stag');
+        if (el.style) el.style.animationDelay = '';
+      }, 1400);
       el.addEventListener('animationend', function h(ev) {
         if (ev.animationName !== 'stagIn') return;
         el.classList.remove('stag');
         if (el.style) el.style.animationDelay = '';
+        if (el._stagTimer) { clearTimeout(el._stagTimer); el._stagTimer = null; }
         el.removeEventListener('animationend', h);
       });
     });
@@ -343,8 +361,12 @@
   function bindSpeak(btnId, getText) {
     var btn = $(btnId);
     if (!btn) return;
+    // 检查语音合成支持，不支持则隐藏按钮
+    if (!('speechSynthesis' in window)) {
+      btn.style.display = 'none';
+      return;
+    }
     btn.addEventListener('click', function () {
-      if (!('speechSynthesis' in window)) { btn.style.display = 'none'; return; }
       if (btn.classList.contains('on')) {
         speechSynthesis.cancel();
         btn.classList.remove('on');
@@ -407,7 +429,11 @@
     $$('#breathDots .wdot').forEach(function (d) { d.classList.remove('on'); });
     $('#breathBtn').textContent = '开始呼吸';
   }
-  function breathCycleLen() { return S.ageTier === 'teen' ? 10 : 8; } /* 少年档：吸 4 呼 6（呼气更长，心率更稳） */
+  function breathCycleLen() { 
+    if (S.ageTier === 'teen') return 10; /* 少年档：吸 4 呼 6 */
+    if (S.ageTier === 'young') return 8; /* 低龄档：吸 4 呼 4，节奏更简单 */
+    return 8; 
+  }
   function breathTick() {
     breath.t += 0.1 * ACCEL;
     var L = breathCycleLen();
@@ -541,7 +567,7 @@
     btn.textContent = '开始动一动';
     $('#moveHome').hidden = true;
   }
-  function moveTargetSec() { return S.ageTier === 'teen' ? 60 : 30; }
+  function moveTargetSec() { return S.ageTier === 'teen' ? 60 : 30; } /* 少年档 1 分钟，其余 30 秒 */
   function moveTick() {
     var T = moveTargetSec();
     S.move.sec += 0.25 * ACCEL;
@@ -1187,6 +1213,61 @@
      同一引擎，三层文案与自主度。mid 为基准库；teen/young 只覆写差异。
      覆写通过 Object.assign 打回原对象，所有既有引用自动生效。 */
   var MID_BASE = null;
+  var YOUNG_LIB = {
+    suggestions: {
+      observe:   { title: '先吹吹云', desc: '脑袋里像有云。找 5 个看到的东西，云就散啦。', time: '约 2 分钟' },
+      breath:    { title: '跟贝壳呼吸', desc: '心里热热的？跟贝壳吸吸呼呼，3 次就好。', time: '约 1 分钟' },
+      move:      { title: '先动一动', desc: '身体想动？30 秒甩甩手、踩踩脚，舒服多啦。', time: '约 1 分钟' },
+      step:      { title: '先做一小步', desc: '只开始一件事。打开本子就算赢啦，中间停下也不怕。', time: '约 2 分钟' },
+      idle:      { title: '待一会儿', desc: '不想动就不做。跟着泡泡呼吸，想动了再说。', time: '不着急' },
+      doneToday: { title: '今天已经够啦', desc: '小岛也要休息啦。明天还在这儿等你哦。', time: '今天到此' }
+    },
+    actions: [
+      { d: '坐着站着都行，动作很小。停下也算完成哦。' },
+      { d: '手腕放松，甩甩手，把不开心甩走。' },
+      null,
+      { d: '慢慢伸个懒腰，舒服就停。' }
+    ],
+    senses: [
+      { t: '找 5 个看到的', d: '铅笔、杯子、贴纸……看到一个点亮一个石头。' },
+      { t: '摸 4 个摸得到的', d: '桌子、衣服、椅子……轻轻碰一下就好。' },
+      { t: '听 3 个小声音', d: '滴答声、风声、自己的呼吸声，都算数。' },
+      { t: '闻 2 个味道', d: '闻不到也没关系，想一想也算数。' },
+      { t: '做 1 口长呼气', d: '慢慢吸，慢慢呼，像给小船鼓风。' }
+    ],
+    dom: [
+      ['.welcome-sub', 'text', '小岛每天只陪你做一件小事。做完了它就不打扰你啦。'],
+      ['.bcard[data-pick="cloud"] .bcard-name', 'text', '云团脑袋'],
+      ['.bcard[data-pick="cloud"] .bcard-desc', 'text', '想法挤在一起'],
+      ['.bcard[data-pick="cloud"] .bcard-go', 'text', '去吹吹云 · 小观察'],
+      ['.bcard[data-pick="spring"] .bcard-name', 'text', '弹簧腿'],
+      ['.bcard[data-pick="spring"] .bcard-desc', 'text', '身体很想动'],
+      ['.bcard[data-pick="spring"] .bcard-go', 'text', '去放电 · 30 秒动一动'],
+      ['.bcard[data-pick="fire"] .bcard-name', 'text', '小火球'],
+      ['.bcard[data-pick="fire"] .bcard-desc', 'text', '心里热热的'],
+      ['.bcard[data-pick="fire"] .bcard-go', 'text', '去凉凉火 · 贝壳呼吸'],
+      ['.bcard[data-pick="battery"] .bcard-go', 'text', '去充电 · 休息 5 分钟'],
+      ['.bcard[data-pick="green"] .bcard-name', 'text', '小绿灯'],
+      ['.bcard[data-pick="green"] .bcard-desc', 'text', '我还可以'],
+      ['.charge-card .eyebrow', 'text', '身体需要什么吗？'],
+      ['#scr-calm .h1', 'text', '把云慢慢吹开'],
+      ['#scr-calm .sub', 'text', '找到就点亮一颗小石头。不用写，也不用说。'],
+      ['#senseMap .srow[data-i="0"] span', 'text', '5 个看见的东西'],
+      ['#senseMap .srow[data-i="1"] span', 'text', '4 个摸得到的东西'],
+      ['#senseMap .srow[data-i="2"] span', 'text', '3 个小声音'],
+      ['#senseMap .srow[data-i="3"] span', 'text', '2 个味道'],
+      ['#senseMap .srow[data-i="4"] span', 'text', '1 口慢慢的气'],
+      ['#scr-breath .h1', 'text', '跟贝壳呼吸 3 次'],
+      ['#scr-breath .sub', 'text', '慢慢吸，慢慢呼。想停就停，停一下也算完成。'],
+      ['#breathPlay p', 'text', '跟着泡泡：吸气 4 秒，呼气 4 秒。'],
+      ['#scr-move .h1', 'text', '30 秒动一动'],
+      ['#scr-move .gentle-note', 'text', '不是比赛，只是帮身体放电'],
+      ['.tile[data-title="涂一只慢慢鱼"] .tile-tx b', 'text', '涂慢慢鱼'],
+      ['.tile[data-title="涂一只慢慢鱼"] .tile-tx .tdesc', 'text', '涂几片就算数'],
+      ['.tile[data-title="涂一只慢慢鱼"]', 'attr:data-title', '涂一只慢慢鱼'],
+      ['.tile[data-title="涂一只慢慢鱼"]', 'attr:data-desc', '不用涂完，涂几片就算数。']
+    ]
+  };
   var TEEN_LIB = {
     suggestions: {
       observe:   { title: '先让大脑着陆', desc: '过载的时候用这个：找 5 个看到的东西，把注意力拉回房间。' },
@@ -1289,6 +1370,7 @@
     S.ageTier = tier;
     if (!MID_BASE) MID_BASE = { s: snap(SUGGESTIONS), a: snap(ACTIONS), e: snap(SENSES) };
     var isTeen = tier === 'teen';
+    var isYoung = tier === 'young';
     var sBase = snap(MID_BASE.s), aBase = snap(MID_BASE.a), eBase = snap(MID_BASE.e);
     Object.keys(sBase).forEach(function (k) { Object.assign(SUGGESTIONS[k], sBase[k]); });
     mergeIdx(ACTIONS, aBase);
@@ -1300,9 +1382,18 @@
       mergeIdx(ACTIONS, TEEN_LIB.actions);
       mergeIdx(SENSES, TEEN_LIB.senses);
     }
+    if (isYoung) {
+      Object.keys(YOUNG_LIB.suggestions).forEach(function (k) {
+        if (SUGGESTIONS[k]) Object.assign(SUGGESTIONS[k], YOUNG_LIB.suggestions[k]);
+      });
+      mergeIdx(ACTIONS, YOUNG_LIB.actions);
+      mergeIdx(SENSES, YOUNG_LIB.senses);
+    }
     MID_DOM.forEach(applyDom);
     if (isTeen) TEEN_LIB.dom.forEach(applyDom);
+    if (isYoung) YOUNG_LIB.dom.forEach(applyDom);
     document.body.classList.toggle('tier-teen', isTeen);
+    document.body.classList.toggle('tier-young', isYoung);
     /* 重渲染受影响的部分 */
     renderHome();
     buildLib();
@@ -1318,16 +1409,20 @@
     S.ageTierChosen = true;
     saveRecords();
     applyTier(S.ageTier);
-    if (!silent) toast(S.ageTier === 'teen' ? '已切换到少年版' : '已切换');
+    if (!silent) {
+      var msg = S.ageTier === 'teen' ? '已切换到少年版' : (S.ageTier === 'young' ? '已切换到低龄版' : '已切换');
+      toast(msg);
+    }
   }
   function doneWord(key) {
     var teen = S.ageTier === 'teen';
+    var young = S.ageTier === 'young';
     var W = {
-      calm:   teen ? '着陆完成' : '云散开了',
-      move:   '放电完成',
-      step:   '开始了',
-      breath: teen ? '降速完成' : '呼吸真好',
-      close:  '回来啦'
+      calm:   teen ? '着陆完成' : (young ? '云散啦！' : '云散开了'),
+      move:   young ? '动完啦！' : '放电完成',
+      step:   young ? '开始啦！' : '开始了',
+      breath: teen ? '降速完成' : (young ? '呼吸真棒' : '呼吸真好'),
+      close:  young ? '回来咯' : '回来啦'
     };
     return W[key];
   }
@@ -1429,7 +1524,12 @@
           m.style.left = (40 + Math.random() * 240) + 'px';
           m.style.top = (50 + Math.random() * 130) + 'px';
           document.body.appendChild(m);
-          setTimeout(function () { m.remove(); }, 1250);
+          fxEls.push(m);
+          setTimeout(function () { 
+            m.remove(); 
+            var idx = fxEls.indexOf(m);
+            if (idx >= 0) fxEls.splice(idx, 1);
+          }, 1250);
         }, k * 260);
       })(i);
     }
@@ -1456,6 +1556,45 @@
     document.body.appendChild(w);
     setTimeout(function () { w.remove(); }, 1600);
   }
+  /* 完成时：叶子缓缓飘落 —— 比爆闪更安静，但孩子看得见"我做完了" */
+  function fallingLeaves(el, n) {
+    if (!el || !motionOK()) return;
+    var r = el.getBoundingClientRect();
+    var palette = ['#86AE8D', '#A6C5CE', '#E7C989', '#DDB1A4'];
+    var total = n || 6;
+    for (var i = 0; i < total; i++) {
+      (function (k) {
+        var leaf = document.createElement('span');
+        leaf.className = 'leaf';
+        leaf.style.left = (r.left + r.width * 0.15 + Math.random() * r.width * 0.7) + 'px';
+        leaf.style.top = (r.top - 4) + 'px';
+        leaf.style.setProperty('--leaf-c', palette[k % palette.length]);
+        leaf.style.setProperty('--lx', (Math.random() * 110 - 55) + 'px');
+        leaf.style.setProperty('--lr', Math.round(Math.random() * 300 + 120) + 'deg');
+        leaf.style.setProperty('--lf', (1.9 + Math.random() * 1.1) + 's');
+        leaf.style.animationDelay = (k * 95) + 'ms';
+        document.body.appendChild(leaf);
+        fxEls.push(leaf);
+        setTimeout(function () {
+          leaf.remove();
+          var idx = fxEls.indexOf(leaf);
+          if (idx >= 0) fxEls.splice(idx, 1);
+        }, 3400);
+      })(i);
+    }
+  }
+  /* 完成时：一圈水纹，从按钮中心慢慢散开 */
+  function rippleRing(el) {
+    if (!el || !motionOK()) return;
+    var r = el.getBoundingClientRect();
+    var d = document.createElement('span');
+    d.className = 'ripple-ring';
+    d.style.left = (r.left + r.width / 2) + 'px';
+    d.style.top = (r.top + r.height / 2) + 'px';
+    d.style.width = d.style.height = Math.max(r.width, r.height) + 'px';
+    document.body.appendChild(d);
+    setTimeout(function () { d.remove(); }, 1000);
+  }
   /* 大完成时刻：星光喷泉 + 暖光晕 + 全屏暖光闪 + 流星 + 暖话漂浮 */
   function magicDone(el, word) {
     if (!el || !motionOK()) return;
@@ -1463,6 +1602,8 @@
     warmHalo(el);
     warmFlash();
     meteors(3);
+    rippleRing(el);
+    fallingLeaves(el, 7);
     if (word) floatWord(el, word);
     /* 卡片掠光：完成瞬间一道柔光扫过 */
     var card = el.closest ? el.closest('.card') : null;
@@ -1543,6 +1684,12 @@
   var ageP = params.get('age');
   if (ageP && ['young', 'mid', 'teen'].indexOf(ageP) >= 0) { S.ageTier = ageP; S.ageTierChosen = true; }
   applyTier(S.ageTier);
+  /* 一天中的光线：傍晚/夜里把纸色调暖、调暗一点（减少蓝光与刺激） */
+  var hNow = S.qaHour != null ? S.qaHour : new Date().getHours();
+  var daypart = hNow >= 5 && hNow < 11 ? 'morning'
+    : hNow >= 11 && hNow < 17 ? 'afternoon'
+    : hNow >= 17 && hNow < 21 ? 'evening' : 'night';
+  document.body.setAttribute('data-daypart', daypart);
   buildRail();
   renderHome();
   buildLib();
