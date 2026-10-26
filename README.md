@@ -158,3 +158,39 @@ previews/             # 11 屏 + 6 个交互态截图与全景长图
 - **缓存策略 v4**：页面文档（`/` 与 `index.html`）改为**网络优先**，发版后用户下次打开即更新；静态资源（css/js/icons/manifest）缓存优先 + 后台刷新（stale-while-revalidate）。旧版「运行时缓存优先」会把老用户锁死在旧 CSS 上
 - **隐私页**（第 13 屏）：数据只存本机、可一键导出 JSON / 清除；「边界」卡明确不是医疗工具与危急情况指引（找身边的大人 / 120 / 心理援助热线）
 - 入口：欢迎页底部与家长小门底部「隐私与安全说明」
+
+## Android 正式版（APK）
+
+Capacitor 8 把整站打包进 APK，离线可用，没有地址栏。包名 `com.conyoung.island`，minSdk 24（Android 7.0+），竖屏锁定。
+
+### 出包命令
+
+```bash
+npm install            # 首次
+npm run apk            # 调试包  -> android/app/build/outputs/apk/debug/
+npm run apk:release    # 正式包  -> android/app/build/outputs/apk/release/
+npm run icons          # 换了 icons/icon-512.png 后重新生成各密度图标与启动图
+```
+
+`build-web.mjs` 只把运行必需的文件拷进 `dist/`（不带宽到 200 多屏的预览页）。
+
+### 正式签名
+
+正式包用**自己的密钥**签名，必须比调试包更严格地保管：
+
+| 文件 | 作用 | 是否入库 |
+|------|------|----------|
+| `android/release.keystore` | 签名密钥（RSA 4096，30 年） | ❌ 已 gitignore |
+| `android/keystore.properties` | 别名与密码，`build.gradle` 读取 | ❌ 已 gitignore |
+
+- **这两个文件丢失 = 永远无法给已安装用户发更新**，只能换包名重发。请异地备份（桌面已有 `安静成长岛-签名备份/`）。
+- 仓库里没有密钥时，`assembleRelease` 会**直接报错**，不会偷偷用调试密钥签出一个「假正式版」。
+- 换机器：把这两个文件放回 `android/` 即可，无需改代码。
+
+### 发新版本
+
+1. 改 `android/app/build.gradle`：`versionCode` **必须 +1**（否则用户装不上更新），`versionName` 同步。
+2. `npm run apk:release`。
+3. 分发 `app-release.apk`。
+
+> 签名不同不能覆盖安装：装过调试包的手机要先卸载再装正式包（会清空本地记录）。
