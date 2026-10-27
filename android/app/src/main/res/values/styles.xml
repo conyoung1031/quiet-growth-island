@@ -7,12 +7,22 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <!-- Android 15+ 强制 edge-to-edge：状态栏/手势条背后就是页面底色，
+             图标必须转成深色，否则白字压在米色背景上看不见 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/paper</item>
     </style>
 
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
         <item name="android:background">@null</item>
+        <!-- 同上：BridgeActivity 启动后会切到这个主题，这两个属性才是真正生效的 -->
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/paper</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
 
 

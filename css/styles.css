@@ -1166,14 +1166,34 @@ body.noanim .content > .stag{opacity:1}
 
 /* ===================== 原生 APK 全屏模式（body.native） =====================
    Capacitor 打包时由 JS 加上。宽屏（平板 / 横屏）下也会是"手机全屏"布局：
-   不出原型导航栏、不出手机边框、不出假状态栏（用安卓自己的状态栏）。 */
-body.native{overflow:hidden}
+   不出原型导航栏、不出手机边框、不出假状态栏（用安卓自己的状态栏）。
+
+   Android 15 起系统强制 edge-to-edge（Android 17 / API 37 起无法退出），
+   窗口一定铺满整块屏幕，状态栏和手势条会压在内容上。
+   正确做法是按系统给的 inset 让开，而不是把内容顶到 0：
+   - Capacitor 8 的 SystemBars 插件会把 insets 写成 --safe-area-inset-*
+   - 新版 WebView 另外支持 env(safe-area-inset-*)
+   两个都取，取较大值（任一端没给到也不会贴边）。 */
+body.native{
+  overflow:hidden;
+  --safe-top:0px;
+  --safe-right:0px;
+  --safe-bottom:0px;
+  --safe-left:0px;
+  --safe-top:max(env(safe-area-inset-top, 0px), var(--safe-area-inset-top, 0px));
+  --safe-right:max(env(safe-area-inset-right, 0px), var(--safe-area-inset-right, 0px));
+  --safe-bottom:max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom, 0px));
+  --safe-left:max(env(safe-area-inset-left, 0px), var(--safe-area-inset-left, 0px));
+}
 body.native .stage{display:block;padding:0;min-height:100vh;min-height:100dvh;background:var(--paper)}
 body.native .rail{display:none}
 body.native .device{margin:0;width:100%;max-width:none}
 body.native .device-screen{
   width:100%;max-width:none;
   height:100vh;height:100dvh;
+  /* 让开系统状态栏 / 手势条 / 刘海。viewport 与 tabbar 都是 absolute，
+     定位基准是这里的 padding box，因此会一起内缩 */
+  padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   outline:none;border-radius:0;box-shadow:none;
   background:var(--paper);
 }

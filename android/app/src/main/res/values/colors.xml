@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#4C7264</color>
+    <color name="colorPrimaryDark">#3C5A4E</color>
+    <color name="colorAccent">#E0A585</color>
+
+    <!-- 与 Web 端 CSS 变量 paper 一致：edge-to-edge 下状态栏 / 手势条背后铺的就是这个色，
+         所以必须和页面底色完全相同，否则顶部会出现一条色差 -->
+    <color name="paper">#F5EFE6</color>
+</resources>
