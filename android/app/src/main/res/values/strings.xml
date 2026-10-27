@@ -4,4 +4,6 @@
     <string name="title_activity_main">安静成长岛</string>
     <string name="package_name">com.conyoung.island</string>
     <string name="custom_url_scheme">com.conyoung.island</string>
+    <string name="app_author">大圣</string>
+    <string name="app_description">给容易分心的孩子一个慢慢长大的小地方 · 制作人 大圣</string>
 </resources>

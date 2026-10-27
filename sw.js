@@ -8,7 +8,7 @@
      同时后台去网络取一份新副本，下次访问就是最新的（stale-while-revalidate）。
    · 缓存版本随内容变化而递增；activate 时清掉旧版本缓存。
 */
-var CACHE = 'qgi-v6';
+var CACHE = 'qgi-v7';
 var ASSETS = [
   './',
   './index.html',

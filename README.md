@@ -2,7 +2,9 @@
 
 > 给容易分心、情绪容易满出来的孩子，一个慢慢长大的小地方。
 
-一款面向轻度 ADHD 儿童的成长陪伴 App 的**高保真可交互 UI 原型**。不是医疗诊断工具，不宣称治疗 ADHD；科学原则藏在结构里，不写在界面上。
+**制作人：大圣**
+
+一款面向轻度 ADHD 儿童的成长陪伴 App。不是医疗诊断工具，不宣称治疗 ADHD；科学原则藏在结构里，不写在界面上。
 
 ## 预览方式
 
@@ -162,6 +164,19 @@ previews/             # 11 屏 + 6 个交互态截图与全景长图
 ## Android 正式版（APK）
 
 Capacitor 8 把整站打包进 APK，离线可用，没有地址栏。包名 `com.conyoung.island`，minSdk 24（Android 7.0+），竖屏锁定。
+
+**制作人：大圣**（App 内欢迎页底部、家长小门底部、隐私页「关于」卡均有署名，APK 元数据里也有 `app.author`）。
+
+目标平台跟随最新：`compileSdk = targetSdk = 37`（Android 17）。
+
+### 全面屏（edge-to-edge）适配
+
+Android 15 起系统强制 edge-to-edge，Android 17 起**无法退出**——窗口一定铺满整块屏幕，状态栏和手势条会压在内容上。小岛的处理方式：
+
+- **不靠布局技巧硬顶**，而是按系统给的 inset 让开：`--safe-top / --safe-bottom` 取 `env(safe-area-inset-*)` 与 Capacitor 注入的 `--safe-area-inset-*` 的**较大值**（任一端为 0 也不会贴边）
+- inset 必须写在**定位元素自己身上**（`.viewport` 的 `inset`、`.tabbar` 的 `bottom`）。给父级加 padding 是没用的——absolute 子元素的定位基准是父级的 padding box
+- 状态栏 / 手势条背后铺 `@color/paper`（= CSS `--paper`），并开 `windowLightStatusBar/NavigationBar`，让系统图标转深色，避免白字压在米色上
+- 实测：1080×2400 / 420dpi 下 `safeTop = 53px`，视口顶部正好落在 53px
 
 ### 出包命令
 

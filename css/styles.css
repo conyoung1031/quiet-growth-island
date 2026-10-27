@@ -1191,14 +1191,20 @@ body.native .device{margin:0;width:100%;max-width:none}
 body.native .device-screen{
   width:100%;max-width:none;
   height:100vh;height:100dvh;
-  /* 让开系统状态栏 / 手势条 / 刘海。viewport 与 tabbar 都是 absolute，
-     定位基准是这里的 padding box，因此会一起内缩 */
-  padding:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
   outline:none;border-radius:0;box-shadow:none;
   background:var(--paper);
 }
 body.native .statusbar{display:none}
-body.native .viewport{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden}
+/* 内缩必须写在定位元素自己身上：
+   absolute 子元素的基准是父级的 padding box，给父级加 padding 推不动它 */
+body.native .viewport{
+  position:absolute;
+  inset:var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  overflow-y:auto;overflow-x:hidden;
+}
+/* 底部 tab 抬高到手势条之上；手势条区域露出页面底色 */
+body.native .tabbar{bottom:var(--safe-bottom)}
+body.native .toast{bottom:calc(104px + var(--safe-bottom))}
 /* 平板 / 横屏下不把卡片拉满屏，正文保持手机宽度的可读行宽 */
 @media (min-width:560px){
   body.native .content{max-width:520px;margin-left:auto;margin-right:auto}

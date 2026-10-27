@@ -1,8 +1,9 @@
 {
   "name": "quiet-growth-island",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "安静成长岛 · PWA 与 Android（Capacitor）打包",
+  "author": "大圣",
   "type": "module",
   "scripts": {
     "build": "node scripts/build-web.mjs",
